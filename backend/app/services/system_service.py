@@ -22,7 +22,7 @@ from app.schemas.system_schemas import (
     SystemHealthCheck, DashboardSummary
 )
 from app.services.base_service import BaseService
-from backend.app.utils.auth import logger
+from app.utils.auth import logger
 
 # 시스템 시작 시간 (서버 가동시간 계산용)
 SYSTEM_START_TIME = time.time()
