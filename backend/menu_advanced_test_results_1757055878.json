@@ -1,0 +1,79 @@
+[
+  {
+    "timestamp": "2025-09-05T16:03:59.354252",
+    "test_name": "Authentication",
+    "success": true,
+    "response_data": {
+      "status_code": 200,
+      "token_acquired": true
+    },
+    "error": null
+  },
+  {
+    "timestamp": "2025-09-05T16:04:09.084283",
+    "test_name": "POST /menus/move - 메뉴 이동",
+    "success": true,
+    "response_data": {
+      "status_code": 200,
+      "data": {
+        "menu_nm": "자식 메뉴",
+        "progrm_file_nm": "/test/CHILD_1757055839",
+        "menu_dc": "테스트용 메뉴: 자식 메뉴",
+        "upper_menu_no": "TARGET_1757055839",
+        "menu_ordr": "5",
+        "menu_level": null,
+        "leaf_at": null,
+        "relate_image_path": null,
+        "relate_image_nm": null,
+        "use_at": "Y",
+        "delete_at": "N",
+        "menu_id": null,
+        "menu_no": "CHILD_1757055839",
+        "frst_register_id": "system",
+        "frst_regist_pnttm": "2025-09-05T16:04:04.919330",
+        "last_updusr_id": "admin",
+        "last_updt_pnttm": "2025-09-05T16:04:09.063320"
+      },
+      "move_verified": true
+    },
+    "error": null
+  },
+  {
+    "timestamp": "2025-09-05T16:04:17.383731",
+    "test_name": "PUT /menus/order - 메뉴 순서 일괄 업데이트",
+    "success": false,
+    "response_data": {
+      "status_code": 404
+    },
+    "error": "Status: 404"
+  },
+  {
+    "timestamp": "2025-09-05T16:04:21.549181",
+    "test_name": "POST /menus/copy - 메뉴 복사",
+    "success": true,
+    "response_data": {
+      "status_code": 200,
+      "data": {
+        "menu_nm": "복사된 메뉴 1757055857",
+        "progrm_file_nm": "/test/SOURCE_1757055857",
+        "menu_dc": "테스트용 메뉴: 원본 메뉴",
+        "upper_menu_no": null,
+        "menu_ordr": "65",
+        "menu_level": null,
+        "leaf_at": null,
+        "relate_image_path": null,
+        "relate_image_nm": null,
+        "use_at": "Y",
+        "delete_at": "N",
+        "menu_id": null,
+        "menu_no": "COPIED_1757055857",
+        "frst_register_id": "system",
+        "frst_regist_pnttm": "2025-09-05T16:04:21.530721",
+        "last_updusr_id": "system",
+        "last_updt_pnttm": "2025-09-05T16:04:21.530721"
+      },
+      "copy_verified": true
+    },
+    "error": null
+  }
+]

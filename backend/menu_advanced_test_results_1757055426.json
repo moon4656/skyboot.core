@@ -1,0 +1,57 @@
+[
+  {
+    "timestamp": "2025-09-05T15:56:41.711923",
+    "test_name": "Authentication",
+    "success": true,
+    "response_data": {
+      "status_code": 200,
+      "token_acquired": true
+    },
+    "error": null
+  },
+  {
+    "timestamp": "2025-09-05T15:56:49.970812",
+    "test_name": "POST /menus/move - 메뉴 이동",
+    "success": false,
+    "response_data": {
+      "status_code": 500
+    },
+    "error": "Status: 500"
+  },
+  {
+    "timestamp": "2025-09-05T15:56:52.022120",
+    "test_name": "PUT /menus/order - 메뉴 1 생성",
+    "success": false,
+    "response_data": {},
+    "error": "메뉴 1 생성 실패"
+  },
+  {
+    "timestamp": "2025-09-05T15:56:56.149784",
+    "test_name": "POST /menus/copy - 메뉴 복사",
+    "success": true,
+    "response_data": {
+      "status_code": 200,
+      "data": {
+        "menu_nm": "복사된 메뉴 1757055412",
+        "progrm_file_nm": "/test/SOURCE_1757055412",
+        "menu_dc": "테스트용 메뉴: 원본 메뉴",
+        "upper_menu_no": null,
+        "menu_ordr": "37",
+        "menu_level": null,
+        "leaf_at": null,
+        "relate_image_path": null,
+        "relate_image_nm": null,
+        "use_at": "Y",
+        "delete_at": "N",
+        "menu_id": null,
+        "menu_no": "COPIED_1757055412",
+        "frst_register_id": "system",
+        "frst_regist_pnttm": "2025-09-05T15:56:56.119583",
+        "last_updusr_id": "system",
+        "last_updt_pnttm": "2025-09-05T15:56:56.119583"
+      },
+      "copy_verified": true
+    },
+    "error": null
+  }
+]
