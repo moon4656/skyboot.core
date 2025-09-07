@@ -246,7 +246,7 @@ async def delete_file_group(
 
 # ==================== 파일 상세 API ====================
 
-@file_detail_router.get("/", response_model=FileDetailPagination, summary="파일 목록 조회")
+@file_detail_router.get("/details", response_model=FileDetailPagination, summary="파일 목록 조회")
 async def get_file_details(
     skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
     limit: int = Query(100, ge=1, le=1000, description="조회할 최대 레코드 수"),
