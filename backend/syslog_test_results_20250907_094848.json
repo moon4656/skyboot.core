@@ -1,0 +1,90 @@
+[
+  {
+    "test_name": "시스템 로그 생성",
+    "endpoint": "/api/v1/system/syslogs",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:34.563843",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 목록 조회",
+    "endpoint": "/api/v1/system/syslogs",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:36.601091",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 상세 조회",
+    "endpoint": "/api/v1/system/syslogs/TEST_1757206112",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:38.638970",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 수정",
+    "endpoint": "/api/v1/system/syslogs/TEST_1757206112",
+    "method": "PUT",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:40.688345",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 검색",
+    "endpoint": "/api/v1/system/syslogs/search",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:42.727141",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "사용자별 로그 조회",
+    "endpoint": "/api/v1/system/syslogs/user/test_user",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:44.754068",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "오류 로그 조회",
+    "endpoint": "/api/v1/system/syslogs/errors",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:46.798167",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 삭제",
+    "endpoint": "/api/v1/system/syslogs/TEST_1757206112",
+    "method": "DELETE",
+    "expected_status": 200,
+    "actual_status": 401,
+    "success": false,
+    "timestamp": "2025-09-07T09:48:48.865372",
+    "response_data": null,
+    "error_message": "{\"error\":\"Authorization header missing\",\"message\":\"인증 헤더가 누락되었습니다.\",\"detail\":\"유효한 인증 토큰이 필요합니다.\"}"
+  }
+]

@@ -12,30 +12,30 @@ from pydantic import BaseModel, Field
 # CmmnGrpCode 스키마
 class CmmnGrpCodeBase(BaseModel):
     """공통그룹코드 기본 스키마"""
-    group_code_nm: Optional[str] = Field(None, max_length=60, description="그룹코드명")
-    group_code_dc: Optional[str] = Field(None, max_length=200, description="그룹코드설명")
-    use_at: str = Field(default="Y", max_length=1, description="사용여부")
-    delete_at: str = Field(default="N", max_length=1, description="삭제여부")
+    code_id_nm: Optional[str] = Field(None, max_length=60, description="코드ID명")
+    code_id_dc: Optional[str] = Field(None, max_length=200, description="코드ID설명")
+    use_yn: str = Field(default="Y", max_length=1, description="사용여부")
+    cl_code: Optional[str] = Field(None, max_length=10, description="분류코드")
 
 
 class CmmnGrpCodeCreate(CmmnGrpCodeBase):
     """공통그룹코드 생성 스키마"""
-    group_code: str = Field(..., max_length=6, description="그룹코드")
+    code_id: str = Field(..., max_length=6, description="코드ID")
     frst_register_id: str = Field(..., max_length=20, description="최초등록자ID")
 
 
 class CmmnGrpCodeUpdate(BaseModel):
     """공통그룹코드 수정 스키마"""
-    group_code_nm: Optional[str] = Field(None, max_length=60, description="그룹코드명")
-    group_code_dc: Optional[str] = Field(None, max_length=200, description="그룹코드설명")
-    use_at: Optional[str] = Field(None, max_length=1, description="사용여부")
-    delete_at: Optional[str] = Field(None, max_length=1, description="삭제여부")
+    code_id_nm: Optional[str] = Field(None, max_length=60, description="코드ID명")
+    code_id_dc: Optional[str] = Field(None, max_length=200, description="코드ID설명")
+    use_yn: Optional[str] = Field(None, max_length=1, description="사용여부")
+    cl_code: Optional[str] = Field(None, max_length=10, description="분류코드")
     last_updusr_id: Optional[str] = Field(None, max_length=20, description="최종수정자ID")
 
 
 class CmmnGrpCodeResponse(CmmnGrpCodeBase):
     """공통그룹코드 응답 스키마"""
-    group_code: str = Field(..., description="그룹코드")
+    code_id: str = Field(..., description="코드ID")
     frst_register_id: str = Field(..., description="최초등록자ID")
     frst_regist_pnttm: datetime = Field(..., description="최초등록시점")
     last_updusr_id: Optional[str] = Field(None, description="최종수정자ID")
@@ -50,19 +50,19 @@ class CmmnCodeBase(BaseModel):
     """공통코드 기본 스키마"""
     code_nm: Optional[str] = Field(None, max_length=60, description="코드명")
     code_dc: Optional[str] = Field(None, max_length=200, description="코드설명")
-    use_at: str = Field(default="Y", max_length=1, description="사용여부")
-    cl_code: Optional[str] = Field(None, max_length=5, description="분류코드")
-    sort_ordr: Optional[Decimal] = Field(None, description="정렬순서")
-    etc1: Optional[str] = Field(None, max_length=100, description="기타1")
-    etc2: Optional[str] = Field(None, max_length=100, description="기타2")
-    etc3: Optional[str] = Field(None, max_length=100, description="기타3")
-    delete_at: str = Field(default="N", max_length=1, description="삭제여부")
+    attr1: Optional[str] = Field(None, max_length=20, description="속성1")
+    attr2: Optional[str] = Field(None, max_length=20, description="속성2")
+    attr3: Optional[str] = Field(None, max_length=20, description="속성3")
+    attr4: Optional[str] = Field(None, max_length=20, description="속성4")
+    use_yn: str = Field(default="Y", max_length=1, description="사용여부")
+    code_ordr: Optional[int] = Field(None, description="코드순서")
 
 
 class CmmnCodeCreate(CmmnCodeBase):
     """공통코드 생성 스키마"""
     code: str = Field(..., max_length=15, description="코드")
-    group_code: str = Field(..., max_length=6, description="그룹코드")
+    code_id: str = Field(..., max_length=6, description="코드ID")
+    group_code_id: str = Field(..., max_length=6, description="그룹코드ID")
     frst_register_id: str = Field(..., max_length=20, description="최초등록자ID")
 
 
@@ -70,20 +70,19 @@ class CmmnCodeUpdate(BaseModel):
     """공통코드 수정 스키마"""
     code_nm: Optional[str] = Field(None, max_length=60, description="코드명")
     code_dc: Optional[str] = Field(None, max_length=200, description="코드설명")
-    use_at: Optional[str] = Field(None, max_length=1, description="사용여부")
-    cl_code: Optional[str] = Field(None, max_length=5, description="분류코드")
-    sort_ordr: Optional[Decimal] = Field(None, description="정렬순서")
-    etc1: Optional[str] = Field(None, max_length=100, description="기타1")
-    etc2: Optional[str] = Field(None, max_length=100, description="기타2")
-    etc3: Optional[str] = Field(None, max_length=100, description="기타3")
-    delete_at: Optional[str] = Field(None, max_length=1, description="삭제여부")
+    attr1: Optional[str] = Field(None, max_length=20, description="속성1")
+    attr2: Optional[str] = Field(None, max_length=20, description="속성2")
+    attr3: Optional[str] = Field(None, max_length=20, description="속성3")
+    attr4: Optional[str] = Field(None, max_length=20, description="속성4")
+    use_yn: Optional[str] = Field(None, max_length=1, description="사용여부")
+    code_ordr: Optional[int] = Field(None, description="코드순서")
     last_updusr_id: Optional[str] = Field(None, max_length=20, description="최종수정자ID")
 
 
 class CmmnCodeResponse(CmmnCodeBase):
     """공통코드 응답 스키마"""
     code: str = Field(..., description="코드")
-    group_code: str = Field(..., description="그룹코드")
+    code_id: str = Field(..., description="코드ID")
     frst_register_id: str = Field(..., description="최초등록자ID")
     frst_regist_pnttm: datetime = Field(..., description="최초등록시점")
     last_updusr_id: Optional[str] = Field(None, description="최종수정자ID")

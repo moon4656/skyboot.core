@@ -1,0 +1,512 @@
+{
+  "summary": {
+    "total_tests": 18,
+    "passed": 8,
+    "failed": 10,
+    "errors": [
+      "예상 상태코드: 200, 실제: 400",
+      "예상 상태코드: 200, 실제: 422",
+      "예상 상태코드: 200, 실제: 500",
+      "예상 상태코드: 200, 실제: 500",
+      "예상 상태코드: 200, 실제: 404",
+      "예상 상태코드: 200, 실제: 404",
+      "예상 상태코드: 200, 실제: 404",
+      "예상 상태코드: 200, 실제: 500",
+      "예상 상태코드: 200, 실제: 404",
+      "예상 상태코드: 200, 실제: 404"
+    ]
+  },
+  "test_results": [
+    {
+      "test_name": "그룹 코드 목록 조회",
+      "method": "GET",
+      "endpoint": "/group-codes/",
+      "timestamp": "2025-09-06T06:59:13.724969",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": {
+        "items": [
+          {
+            "code_id_nm": "권한유형",
+            "code_id_dc": "시스템 권한 유형을 구분하는 코드",
+            "use_yn": "Y",
+            "cl_code": "AUTH",
+            "code_id": "AUTHOR",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.239783",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_id_nm": "게시판유형",
+            "code_id_dc": "게시판의 유형을 구분하는 코드",
+            "use_yn": "Y",
+            "cl_code": "BBS",
+            "code_id": "BBSTYP",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.239783",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_id_nm": "접속방식",
+            "code_id_dc": "시스템 접속 방식을 구분하는 코드",
+            "use_yn": "Y",
+            "cl_code": "LOG",
+            "code_id": "CONMTH",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.239783",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          }
+        ],
+        "total": 4,
+        "skip": 0,
+        "limit": 10
+      },
+      "error": null,
+      "execution_time": 2.266865
+    },
+    {
+      "test_name": "활성 그룹 코드 목록 조회",
+      "method": "GET",
+      "endpoint": "/group-codes/active",
+      "timestamp": "2025-09-06T06:59:15.991834",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": [
+        {
+          "code_id_nm": "권한유형",
+          "code_id_dc": "시스템 권한 유형을 구분하는 코드",
+          "use_yn": "Y",
+          "cl_code": "AUTH",
+          "code_id": "AUTHOR",
+          "frst_register_id": "SYSTEM",
+          "frst_regist_pnttm": "2025-09-05T23:07:12.239783",
+          "last_updusr_id": null,
+          "last_updt_pnttm": null
+        },
+        {
+          "code_id_nm": "게시판유형",
+          "code_id_dc": "게시판의 유형을 구분하는 코드",
+          "use_yn": "Y",
+          "cl_code": "BBS",
+          "code_id": "BBSTYP",
+          "frst_register_id": "SYSTEM",
+          "frst_regist_pnttm": "2025-09-05T23:07:12.239783",
+          "last_updusr_id": null,
+          "last_updt_pnttm": null
+        },
+        {
+          "code_id_nm": "접속방식",
+          "code_id_dc": "시스템 접속 방식을 구분하는 코드",
+          "use_yn": "Y",
+          "cl_code": "LOG",
+          "code_id": "CONMTH",
+          "frst_register_id": "SYSTEM",
+          "frst_regist_pnttm": "2025-09-05T23:07:12.239783",
+          "last_updusr_id": null,
+          "last_updt_pnttm": null
+        }
+      ],
+      "error": null,
+      "execution_time": 0.00707
+    },
+    {
+      "test_name": "그룹 코드 통계 조회",
+      "method": "GET",
+      "endpoint": "/group-codes/statistics",
+      "timestamp": "2025-09-06T06:59:15.998904",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": {
+        "total_groups": 4,
+        "active_groups": 3,
+        "inactive_groups": 1,
+        "total_codes": 10,
+        "avg_codes_per_group": 2.5
+      },
+      "error": null,
+      "execution_time": 0.007094
+    },
+    {
+      "test_name": "그룹 코드 생성",
+      "method": "POST",
+      "endpoint": "/group-codes/",
+      "timestamp": "2025-09-06T06:59:16.005998",
+      "status": "FAILED",
+      "response_status": 400,
+      "response_data": {
+        "detail": "이미 존재하는 그룹 코드 ID입니다: TEST01"
+      },
+      "error": "예상 상태코드: 200, 실제: 400",
+      "execution_time": 0.015624
+    },
+    {
+      "test_name": "그룹 코드 상세 조회",
+      "method": "GET",
+      "endpoint": "/group-codes/TEST01",
+      "timestamp": "2025-09-06T06:59:16.021622",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": {
+        "code_id_nm": "수정된 테스트 그룹 코드",
+        "code_id_dc": "수정된 테스트용 그룹 코드입니다",
+        "use_yn": "N",
+        "cl_code": null,
+        "code_id": "TEST01",
+        "frst_register_id": "admin",
+        "frst_regist_pnttm": "2025-09-06T06:38:34.978110",
+        "last_updusr_id": "system",
+        "last_updt_pnttm": "2025-09-06T06:57:36.859820",
+        "codes": []
+      },
+      "error": null,
+      "execution_time": 0.008186
+    },
+    {
+      "test_name": "그룹 코드 수정",
+      "method": "PUT",
+      "endpoint": "/group-codes/TEST01",
+      "timestamp": "2025-09-06T06:59:16.029808",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": {
+        "code_id_nm": "수정된 테스트 그룹 코드",
+        "code_id_dc": "수정된 테스트용 그룹 코드입니다",
+        "use_yn": "Y",
+        "cl_code": null,
+        "code_id": "TEST01",
+        "frst_register_id": "admin",
+        "frst_regist_pnttm": "2025-09-06T06:38:34.978110",
+        "last_updusr_id": "SYSTEM",
+        "last_updt_pnttm": "2025-09-06T06:59:16.033808"
+      },
+      "error": null,
+      "execution_time": 0.010649
+    },
+    {
+      "test_name": "그룹 코드와 하위 코드 일괄 생성",
+      "method": "POST",
+      "endpoint": "/group-codes/TEST02/with-codes",
+      "timestamp": "2025-09-06T06:59:16.040457",
+      "status": "FAILED",
+      "response_status": 422,
+      "response_data": {
+        "detail": [
+          {
+            "type": "missing",
+            "loc": [
+              "body",
+              "codes_data",
+              0,
+              "group_code_id"
+            ],
+            "msg": "Field required",
+            "input": {
+              "code": "CODE_001",
+              "code_nm": "코드 1",
+              "code_dc": "테스트 코드 1",
+              "code_id": "TEST02",
+              "use_yn": "Y",
+              "code_ordr": 1,
+              "frst_register_id": "test_user"
+            }
+          }
+        ]
+      },
+      "error": "예상 상태코드: 200, 실제: 422",
+      "execution_time": 0.004
+    },
+    {
+      "test_name": "공통 코드 목록 조회",
+      "method": "GET",
+      "endpoint": "/codes/",
+      "timestamp": "2025-09-06T06:59:16.045962",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": {
+        "items": [
+          {
+            "code_nm": "관리자",
+            "code_dc": "시스템 관리자 권한",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 1,
+            "code": "ADMIN",
+            "code_id": "AUTHOR",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "일반사용자",
+            "code_dc": "일반 사용자 권한",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 2,
+            "code": "USER",
+            "code_id": "AUTHOR",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "게스트",
+            "code_dc": "게스트 권한",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 3,
+            "code": "GUEST",
+            "code_id": "AUTHOR",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "공지사항",
+            "code_dc": "공지사항 게시판",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 1,
+            "code": "NOTICE",
+            "code_id": "BBSTYP",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "자유게시판",
+            "code_dc": "자유 게시판",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 2,
+            "code": "FREE",
+            "code_id": "BBSTYP",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "질문답변",
+            "code_dc": "질문답변 게시판",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 3,
+            "code": "QNA",
+            "code_id": "BBSTYP",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "웹",
+            "code_dc": "웹 브라우저 접속",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 1,
+            "code": "WEB",
+            "code_id": "CONMTH",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "API",
+            "code_dc": "API 접속",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 2,
+            "code": "API",
+            "code_id": "CONMTH",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          },
+          {
+            "code_nm": "모바일",
+            "code_dc": "모바일 앱 접속",
+            "attr1": null,
+            "attr2": null,
+            "attr3": null,
+            "attr4": null,
+            "use_yn": "Y",
+            "code_ordr": 3,
+            "code": "MOBILE",
+            "code_id": "CONMTH",
+            "frst_register_id": "SYSTEM",
+            "frst_regist_pnttm": "2025-09-05T23:07:12.246341",
+            "last_updusr_id": null,
+            "last_updt_pnttm": null
+          }
+        ],
+        "total": 10,
+        "skip": 0,
+        "limit": 10
+      },
+      "error": null,
+      "execution_time": 0.007573
+    },
+    {
+      "test_name": "그룹별 코드 조회",
+      "method": "GET",
+      "endpoint": "/codes/group/TEST01",
+      "timestamp": "2025-09-06T06:59:16.053535",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": [],
+      "error": null,
+      "execution_time": 0.005198
+    },
+    {
+      "test_name": "공통 코드 통계 조회",
+      "method": "GET",
+      "endpoint": "/codes/statistics",
+      "timestamp": "2025-09-06T06:59:16.058733",
+      "status": "FAILED",
+      "response_status": 500,
+      "response_data": {
+        "detail": "공통 코드 통계 조회 중 오류가 발생했습니다: 1 validation error for CmmnCodeStatistics\ncodes_by_group\n  Field required [type=missing, input_value={'total_codes': 10, 'acti...es': 1, 'code_id': None}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.11/v/missing"
+      },
+      "error": "예상 상태코드: 200, 실제: 500",
+      "execution_time": 0.0105
+    },
+    {
+      "test_name": "공통 코드 생성",
+      "method": "POST",
+      "endpoint": "/codes/",
+      "timestamp": "2025-09-06T06:59:16.069233",
+      "status": "FAILED",
+      "response_status": 500,
+      "response_data": {
+        "detail": "공통 코드 생성 중 오류가 발생했습니다: (psycopg2.errors.UniqueViolation) 오류:  중복된 키 값이 \"tb_cmmn_code_pkey\" 고유 제약 조건을 위반함\nDETAIL:  (code_id, code)=(TEST01, TC001) 키가 이미 있습니다.\n\n[SQL: INSERT INTO skybootcore.tb_cmmn_code (code_id, code, code_nm, code_dc, attr1, attr2, attr3, attr4, use_yn, code_ordr, frst_register_id, frst_regist_pnttm, last_updusr_id, last_updt_pnttm) VALUES (%(code_id)s, %(code)s, %(code_nm)s, %(code_dc)s, %(attr1)s, %(attr2)s, %(attr3)s, %(attr4)s, %(use_yn)s, %(code_ordr)s, %(frst_register_id)s, now(), %(last_updusr_id)s, now())]\n[parameters: {'code_id': 'TEST01', 'code': 'TC001', 'code_nm': '테스트 코드', 'code_dc': '테스트용 코드입니다', 'attr1': None, 'attr2': None, 'attr3': None, 'attr4': None, 'use_yn': 'Y', 'code_ordr': 1, 'frst_register_id': 'test_user', 'last_updusr_id': 'test_user'}]\n(Background on this error at: https://sqlalche.me/e/20/gkpj)"
+      },
+      "error": "예상 상태코드: 200, 실제: 500",
+      "execution_time": 0.013434
+    },
+    {
+      "test_name": "공통 코드 상세 조회",
+      "method": "GET",
+      "endpoint": "/codes/TEST01/TC001",
+      "timestamp": "2025-09-06T06:59:16.082667",
+      "status": "FAILED",
+      "response_status": 404,
+      "response_data": {
+        "detail": "공통 코드를 찾을 수 없습니다: TC001"
+      },
+      "error": "예상 상태코드: 200, 실제: 404",
+      "execution_time": 0.005239
+    },
+    {
+      "test_name": "공통 코드 수정",
+      "method": "PUT",
+      "endpoint": "/codes/TEST01/TC001",
+      "timestamp": "2025-09-06T06:59:16.087906",
+      "status": "FAILED",
+      "response_status": 404,
+      "response_data": {
+        "detail": "공통 코드를 찾을 수 없습니다: TC001"
+      },
+      "error": "예상 상태코드: 200, 실제: 404",
+      "execution_time": 0.007611
+    },
+    {
+      "test_name": "코드 복사",
+      "method": "POST",
+      "endpoint": "/codes/copy",
+      "timestamp": "2025-09-06T06:59:16.095517",
+      "status": "FAILED",
+      "response_status": 404,
+      "response_data": {
+        "detail": "대상 그룹 코드를 찾을 수 없습니다: TEST02"
+      },
+      "error": "예상 상태코드: 200, 실제: 404",
+      "execution_time": 0.005373
+    },
+    {
+      "test_name": "코드 정렬 순서 업데이트",
+      "method": "PUT",
+      "endpoint": "/codes/sort-order",
+      "timestamp": "2025-09-06T06:59:16.100890",
+      "status": "FAILED",
+      "response_status": 500,
+      "response_data": {
+        "detail": "정렬 순서 업데이트 중 오류가 발생했습니다: CmmnCodeService.update_sort_order() got an unexpected keyword argument 'sort_updates'"
+      },
+      "error": "예상 상태코드: 200, 실제: 500",
+      "execution_time": 0.018839
+    },
+    {
+      "test_name": "테스트 코드 삭제",
+      "method": "DELETE",
+      "endpoint": "/codes/TEST01/TC001",
+      "timestamp": "2025-09-06T06:59:16.120728",
+      "status": "FAILED",
+      "response_status": 404,
+      "response_data": {
+        "detail": "공통 코드를 찾을 수 없습니다: TC001"
+      },
+      "error": "예상 상태코드: 200, 실제: 404",
+      "execution_time": 0.009653
+    },
+    {
+      "test_name": "테스트 그룹 코드 삭제",
+      "method": "DELETE",
+      "endpoint": "/group-codes/TEST01",
+      "timestamp": "2025-09-06T06:59:16.130381",
+      "status": "PASSED",
+      "response_status": 200,
+      "response_data": {
+        "message": "그룹 코드가 삭제되었습니다: TEST01"
+      },
+      "error": null,
+      "execution_time": 0.011201
+    },
+    {
+      "test_name": "일괄 생성 테스트 그룹 코드 삭제",
+      "method": "DELETE",
+      "endpoint": "/group-codes/TEST02",
+      "timestamp": "2025-09-06T06:59:16.304477",
+      "status": "FAILED",
+      "response_status": 404,
+      "response_data": {
+        "detail": "그룹 코드를 찾을 수 없습니다: TEST02"
+      },
+      "error": "예상 상태코드: 200, 실제: 404",
+      "execution_time": 0.007774
+    }
+  ],
+  "generated_at": "2025-09-06T06:59:16.379660"
+}

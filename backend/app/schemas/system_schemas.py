@@ -13,20 +13,27 @@ from decimal import Decimal
 
 class SysLogBase(BaseModel):
     """시스템 로그 기본 스키마"""
-    requst_id: Optional[str] = Field(None, max_length=20, description="요청ID")
-    rqester_id: Optional[str] = Field(None, max_length=20, description="요청자ID")
-    rqester_ip: Optional[str] = Field(None, max_length=23, description="요청자IP")
-    rqester_nm: Optional[str] = Field(None, max_length=60, description="요청자명")
-    trget_menu_nm: Optional[str] = Field(None, max_length=60, description="대상메뉴명")
-    process_se_code: Optional[str] = Field(None, max_length=20, description="처리구분코드")
-    process_cn: Optional[str] = Field(None, max_length=2000, description="처리내용")
-    process_time: Optional[Decimal] = Field(None, description="처리시간")
-    rqest_de: Optional[datetime] = Field(None, description="요청일자")
+    requst_id: Optional[str] = Field(None, max_length=50, description="요청ID")
+    job_se_code: Optional[str] = Field(None, max_length=10, description="업무구분코드")
+    instt_code: Optional[str] = Field(None, max_length=20, description="기관코드")
+    occrrnc_de: Optional[datetime] = Field(None, description="발생일")
+    rqester_ip: Optional[str] = Field(None, max_length=50, description="요청자IP")
+    rqester_id: Optional[str] = Field(None, max_length=50, description="요청자ID")
+    trget_menu_nm: Optional[str] = Field(None, max_length=500, description="대상메뉴명")
+    svc_nm: Optional[str] = Field(None, max_length=500, description="서비스명")
+    method_nm: Optional[str] = Field(None, max_length=100, description="메서드명")
+    process_se_code: Optional[str] = Field(None, max_length=10, description="처리구분코드")
+    process_co: Optional[Decimal] = Field(None, description="처리수")
+    process_time: Optional[str] = Field(None, max_length=50, description="처리시간")
+    rspns_code: Optional[str] = Field(None, max_length=10, description="응답코드")
+    error_se: Optional[str] = Field(None, max_length=10, description="오류구분")
+    error_co: Optional[Decimal] = Field(None, description="오류수")
+    error_code: Optional[str] = Field(None, max_length=10, description="오류코드")
 
 
 class SysLogCreate(SysLogBase):
     """시스템 로그 생성 스키마"""
-    requst_id: str = Field(..., max_length=20, description="요청ID")
+    requst_id: str = Field(..., max_length=50, description="요청ID")
 
 
 class SysLogUpdate(SysLogBase):
@@ -59,19 +66,21 @@ class SysLogPagination(BaseModel):
 
 class WebLogBase(BaseModel):
     """웹 로그 기본 스키마"""
-    rqester_id: Optional[str] = Field(None, max_length=20, description="요청자ID")
-    rqester_ip: Optional[str] = Field(None, max_length=23, description="요청자IP")
-    rqester_nm: Optional[str] = Field(None, max_length=60, description="요청자명")
-    trget_menu_nm: Optional[str] = Field(None, max_length=60, description="대상메뉴명")
-    process_se_code: Optional[str] = Field(None, max_length=20, description="처리구분코드")
-    process_cn: Optional[str] = Field(None, max_length=2000, description="처리내용")
+    occrrnc_de: Optional[datetime] = Field(None, description="발생일")
+    url: Optional[str] = Field(None, max_length=500, description="URL")
+    rqester_id: Optional[str] = Field(None, max_length=50, description="요청자ID")
+    rqester_ip: Optional[str] = Field(None, max_length=50, description="요청자IP")
+    rqester_nm: Optional[str] = Field(None, max_length=100, description="요청자명")
+    trget_menu_nm: Optional[str] = Field(None, max_length=100, description="대상메뉴명")
+    process_se_code: Optional[str] = Field(None, max_length=50, description="처리구분코드")
+    process_cn: Optional[str] = Field(None, description="처리내용")
     process_time: Optional[Decimal] = Field(None, description="처리시간")
     rqest_de: Optional[datetime] = Field(None, description="요청일자")
 
 
 class WebLogCreate(WebLogBase):
     """웹 로그 생성 스키마"""
-    requst_id: str = Field(..., max_length=20, description="요청ID")
+    requst_id: str = Field(..., max_length=50, description="요청ID")
 
 
 class WebLogUpdate(WebLogBase):
@@ -104,16 +113,16 @@ class WebLogPagination(BaseModel):
 
 class ProgrmListBase(BaseModel):
     """프로그램 목록 기본 스키마"""
-    progrm_file_nm: Optional[str] = Field(None, max_length=60, description="프로그램파일명")
-    progrm_stre_path: Optional[str] = Field(None, max_length=100, description="프로그램저장경로")
-    progrm_korean_nm: Optional[str] = Field(None, max_length=60, description="프로그램한글명")
-    progrm_dc: Optional[str] = Field(None, max_length=200, description="프로그램설명")
-    url: Optional[str] = Field(None, max_length=100, description="URL")
+    progrm_file_nm: Optional[str] = Field(None, max_length=100, description="프로그램파일명")
+    progrm_stre_path: Optional[str] = Field(None, max_length=500, description="프로그램저장경로")
+    progrm_korean_nm: Optional[str] = Field(None, max_length=100, description="프로그램한글명")
+    progrm_dc: Optional[str] = Field(None, max_length=500, description="프로그램설명")
+    url: Optional[str] = Field(None, max_length=500, description="URL")
 
 
 class ProgrmListCreate(ProgrmListBase):
     """프로그램 목록 생성 스키마"""
-    progrm_nm: str = Field(..., max_length=60, description="프로그램명")
+    progrm_nm: str = Field(..., max_length=100, description="프로그램명")
 
 
 class ProgrmListUpdate(ProgrmListBase):

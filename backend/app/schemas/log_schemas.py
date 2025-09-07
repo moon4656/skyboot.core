@@ -12,9 +12,11 @@ from pydantic import BaseModel, Field
 # LoginLog 스키마
 class LoginLogBase(BaseModel):
     """로그인로그 기본 스키마"""
+    user_id: Optional[str] = Field(None, max_length=20, description="사용자ID")
     login_id: Optional[str] = Field(None, max_length=20, description="로그인ID")
     login_ip: Optional[str] = Field(None, max_length=23, description="로그인IP")
     login_mthd: Optional[str] = Field(None, max_length=6, description="로그인방법")
+    login_result: Optional[str] = Field(None, max_length=10, description="로그인결과")
     error_occrrnc_at: Optional[str] = Field(None, max_length=1, description="오류발생여부")
     error_code: Optional[str] = Field(None, max_length=3, description="오류코드")
     connect_stats: Optional[str] = Field(None, max_length=1, description="접속상태")
@@ -25,7 +27,7 @@ class LoginLogBase(BaseModel):
 
 class LoginLogCreate(LoginLogBase):
     """로그인로그 생성 스키마"""
-    log_id: str = Field(..., max_length=20, description="로그ID")
+    log_id: Optional[str] = Field(None, max_length=20, description="로그ID")
 
 
 class LoginLogUpdate(BaseModel):
@@ -39,7 +41,7 @@ class LoginLogUpdate(BaseModel):
 class LoginLogResponse(LoginLogBase):
     """로그인로그 응답 스키마"""
     log_id: str = Field(..., description="로그ID")
-    creat_dt: datetime = Field(..., description="생성일시")
+    frst_regist_pnttm: datetime = Field(..., description="생성일시")
     session_duration: Optional[int] = Field(None, description="세션 지속시간(분)")
 
     class Config:
@@ -253,14 +255,15 @@ class SuspiciousActivityResponse(BaseModel):
 class SessionManagementResponse(BaseModel):
     """세션 관리 응답 스키마"""
     session_id: str = Field(..., description="세션ID")
-    user_id: str = Field(..., description="사용자ID")
-    login_time: datetime = Field(..., description="로그인 시간")
-    last_activity: datetime = Field(..., description="마지막 활동")
-    ip_address: str = Field(..., description="IP 주소")
-    user_agent: str = Field(..., description="사용자 에이전트")
-    is_active: bool = Field(..., description="활성 상태")
-    session_duration: int = Field(..., description="세션 지속시간(분)")
+    user_id: Optional[str] = Field(None, description="사용자ID")
+    login_time: Optional[str] = Field(None, description="로그인 시간")
+    last_activity: Optional[str] = Field(None, description="마지막 활동")
+    ip_address: Optional[str] = Field(None, description="IP 주소")
+    user_agent: Optional[str] = Field(None, description="사용자 에이전트")
+    is_active: Optional[bool] = Field(None, description="활성 상태")
+    session_duration: Optional[int] = Field(None, description="세션 지속시간(분)")
     location: Optional[dict] = Field(None, description="위치 정보")
+    status: Optional[str] = Field(None, description="세션 상태")
 
 
 # 로그 분석 응답 스키마
@@ -275,3 +278,20 @@ class LogAnalysisResponse(BaseModel):
     anomalies: List[dict] = Field(..., description="이상 징후")
     recommendations: List[str] = Field(..., description="권장사항")
     generated_at: datetime = Field(..., description="생성 시간")
+
+
+# 로그 내보내기 응답 스키마
+class LogExportResponse(BaseModel):
+    """로그 내보내기 응답 스키마"""
+    status: str = Field(..., description="상태")
+    data: dict = Field(..., description="내보내기 데이터")
+    format: str = Field(..., description="내보내기 형식")
+
+
+# 로그 분석 간단 응답 스키마
+class LogAnalysisSimpleResponse(BaseModel):
+    """로그 분석 간단 응답 스키마"""
+    status: str = Field(..., description="상태")
+    analysis_type: str = Field(..., description="분석 유형")
+    days: int = Field(..., description="분석 기간(일)")
+    result: dict = Field(..., description="분석 결과")

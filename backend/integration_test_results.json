@@ -1,0 +1,85 @@
+{
+  "test_summary": {
+    "total_tests": 6,
+    "passed_tests": 6,
+    "failed_tests": 0,
+    "success_rate": "100.0%",
+    "test_time": "2025-09-05T23:34:08.322454"
+  },
+  "detailed_results": [
+    {
+      "test_name": "User Login",
+      "success": true,
+      "timestamp": "2025-09-05T23:33:53.648756",
+      "details": {
+        "status_code": 200,
+        "token_type": "bearer",
+        "expires_in": 1800,
+        "user_id": "admin",
+        "access_token_received": true,
+        "refresh_token_received": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "Token Validation",
+      "success": true,
+      "timestamp": "2025-09-05T23:33:55.748482",
+      "details": {
+        "status_code": 200,
+        "user_id": "admin",
+        "endpoint_accessed": "/users/profile"
+      },
+      "error": null
+    },
+    {
+      "test_name": "Token Refresh",
+      "success": true,
+      "timestamp": "2025-09-05T23:33:57.842462",
+      "details": {
+        "status_code": 200,
+        "token_type": "bearer",
+        "expires_in": 1800,
+        "new_token_received": true,
+        "token_different": true
+      },
+      "error": null
+    },
+    {
+      "test_name": "Invalid Token Access",
+      "success": true,
+      "timestamp": "2025-09-05T23:33:59.891626",
+      "details": {
+        "status_code": 401,
+        "expected_behavior": "401 Unauthorized"
+      },
+      "error": null
+    },
+    {
+      "test_name": "Login Log Verification",
+      "success": true,
+      "timestamp": "2025-09-05T23:33:59.988563",
+      "details": {
+        "logs_found": 5,
+        "latest_log_id": "20250905233353638",
+        "latest_login_time": "2025-09-05T23:33:53.638682",
+        "user_id": "admin",
+        "connection_ip": "127.0.0.1",
+        "connection_method": null
+      },
+      "error": null
+    },
+    {
+      "test_name": "Multiple Login Attempts",
+      "success": true,
+      "timestamp": "2025-09-05T23:34:08.321417",
+      "details": {
+        "total_attempts": 3,
+        "successful_logins": 3,
+        "success_rate": "100.0%",
+        "threshold": "80%"
+      },
+      "error": null
+    }
+  ]
+}

@@ -4,7 +4,7 @@
 """
 
 from typing import List, Optional, Dict, Any, Tuple
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from decimal import Decimal
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, func, desc, asc, text
@@ -68,7 +68,7 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
         obj_data = obj_in.model_dump()
         obj_data["frst_regist_pnttm"] = datetime.now()
         obj_data["frst_register_id"] = current_user_id
-        obj_data["rqest_de"] = obj_data.get("rqest_de", datetime.now())
+        obj_data["occrrnc_de"] = obj_data.get("occrrnc_de", datetime.now())
         
         db_obj = SysLog(**obj_data)
         db.add(db_obj)
@@ -82,23 +82,25 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
         requst_id: str,
         rqester_id: Optional[str] = None,
         rqester_ip: Optional[str] = None,
-        rqester_nm: Optional[str] = None,
         trget_menu_nm: Optional[str] = None,
+        svc_nm: Optional[str] = None,
+        method_nm: Optional[str] = None,
         process_se_code: Optional[str] = None,
-        process_cn: Optional[str] = None,
-        process_time: Optional[Decimal] = None
+        process_time: Optional[str] = None,
+        error_code: Optional[str] = None
     ) -> SysLog:
         """시스템 로그 항목 생성 (편의 메서드)"""
         log_data = SysLogCreate(
             requst_id=requst_id,
             rqester_id=rqester_id,
             rqester_ip=rqester_ip,
-            rqester_nm=rqester_nm,
             trget_menu_nm=trget_menu_nm,
+            svc_nm=svc_nm,
+            method_nm=method_nm,
             process_se_code=process_se_code,
-            process_cn=process_cn,
             process_time=process_time,
-            rqest_de=datetime.now()
+            error_code=error_code,
+            occrrnc_de=datetime.now()
         )
         return self.create(db, log_data)
     
@@ -119,9 +121,6 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
         if search_params.rqester_ip:
             query = query.filter(SysLog.rqester_ip == search_params.rqester_ip)
         
-        if search_params.rqester_nm:
-            query = query.filter(SysLog.rqester_nm.ilike(f"%{search_params.rqester_nm}%"))
-        
         if search_params.trget_menu_nm:
             query = query.filter(SysLog.trget_menu_nm.ilike(f"%{search_params.trget_menu_nm}%"))
         
@@ -129,38 +128,216 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
             query = query.filter(SysLog.process_se_code == search_params.process_se_code)
         
         if search_params.start_date:
-            query = query.filter(SysLog.rqest_de >= search_params.start_date)
+            query = query.filter(SysLog.occrrnc_de >= search_params.start_date)
         
         if search_params.end_date:
-            query = query.filter(SysLog.rqest_de <= search_params.end_date)
+            query = query.filter(SysLog.occrrnc_de <= search_params.end_date)
         
         # 전체 개수 조회
         total = query.count()
         
         # 페이지네이션 적용
-        logs = query.order_by(desc(SysLog.rqest_de)).offset(skip).limit(limit).all()
+        logs = query.order_by(desc(SysLog.occrrnc_de)).offset(skip).limit(limit).all()
         
         return logs, total
     
-    def get_logs_by_user(self, db: Session, user_id: str, days: int = 30) -> List[SysLog]:
-        """특정 사용자의 로그 조회"""
+    def get_user_logs(
+        self, 
+        db: Session, 
+        user_id: str, 
+        days: int = 30, 
+        skip: int = 0, 
+        limit: int = 100
+    ) -> Tuple[List[SysLog], int]:
+        """특정 사용자의 로그 조회 (페이지네이션 지원)"""
         start_date = datetime.now() - timedelta(days=days)
-        return db.query(SysLog).filter(
+        query = db.query(SysLog).filter(
             and_(
                 SysLog.rqester_id == user_id,
-                SysLog.rqest_de >= start_date
+                SysLog.occrrnc_de >= start_date
             )
-        ).order_by(desc(SysLog.rqest_de)).all()
+        )
+        
+        # 전체 개수 조회
+        total = query.count()
+        
+        # 페이지네이션 적용
+        logs = query.order_by(desc(SysLog.occrrnc_de)).offset(skip).limit(limit).all()
+        
+        return logs, total
     
-    def get_error_logs(self, db: Session, days: int = 7) -> List[SysLog]:
-        """오류 로그 조회"""
+    def get_error_logs(
+        self, 
+        db: Session, 
+        days: int = 7, 
+        skip: int = 0, 
+        limit: int = 100
+    ) -> Tuple[List[SysLog], int]:
+        """오류 로그 조회 (페이지네이션 지원)"""
         start_date = datetime.now() - timedelta(days=days)
-        return db.query(SysLog).filter(
+        query = db.query(SysLog).filter(
             and_(
-                SysLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL']),
-                SysLog.rqest_de >= start_date
+                SysLog.error_se == 'Y',
+                SysLog.occrrnc_de >= start_date
             )
-        ).order_by(desc(SysLog.rqest_de)).all()
+        )
+        
+        # 전체 개수 조회
+        total = query.count()
+        
+        # 페이지네이션 적용
+        logs = query.order_by(desc(SysLog.occrrnc_de)).offset(skip).limit(limit).all()
+        
+        return logs, total
+    
+    def get_by_log_id(self, db: Session, log_id: str) -> Optional[SysLog]:
+        """로그 ID로 시스템 로그 조회"""
+        try:
+            return db.query(SysLog).filter(SysLog.requst_id == log_id).first()
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"시스템 로그 조회 중 오류가 발생했습니다: {str(e)}"
+            )
+    
+    def delete(self, db: Session, log_id: str) -> bool:
+        """시스템 로그 삭제"""
+        try:
+            db_obj = self.get_by_log_id(db, log_id)
+            if not db_obj:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="해당 로그를 찾을 수 없습니다."
+                )
+            db.delete(db_obj)
+            db.commit()
+            return True
+        except SQLAlchemyError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"시스템 로그 삭제 중 오류가 발생했습니다: {str(e)}"
+            )
+    
+    def get_log_statistics(self, db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> LogStatistics:
+        """로그 통계 조회"""
+        if start_date is None:
+            start_date = datetime.now() - timedelta(days=30)
+        if end_date is None:
+            end_date = datetime.now()
+        
+        # 전체 요청 수
+        total_requests = db.query(func.count(SysLog.requst_id)).filter(
+            SysLog.occrrnc_de >= start_date
+        ).scalar() or 0
+        
+        # 고유 사용자 수
+        unique_users = db.query(
+            func.count(func.distinct(SysLog.rqester_id))
+        ).filter(
+            and_(
+                SysLog.occrrnc_de >= start_date,
+                SysLog.rqester_id.isnot(None)
+            )
+        ).scalar() or 0
+        
+        # 시간별 요청 수
+        hourly_requests = db.query(
+            func.extract('hour', SysLog.occrrnc_de).label('hour'),
+            func.count(SysLog.requst_id).label('count')
+        ).filter(
+            SysLog.occrrnc_de >= start_date
+        ).group_by(
+            func.extract('hour', SysLog.occrrnc_de)
+        ).all()
+        requests_by_hour = {str(int(hour)): count for hour, count in hourly_requests}
+        
+        # 메뉴별 요청 수
+        menu_requests = db.query(
+            SysLog.trget_menu_nm,
+            func.count(SysLog.requst_id).label('count')
+        ).filter(
+            and_(
+                SysLog.occrrnc_de >= start_date,
+                SysLog.trget_menu_nm.isnot(None)
+            )
+        ).group_by(SysLog.trget_menu_nm).all()
+        requests_by_menu = {menu: count for menu, count in menu_requests}
+        
+        # 처리구분별 요청 수
+        process_requests = db.query(
+            SysLog.process_se_code,
+            func.count(SysLog.requst_id).label('count')
+        ).filter(
+            and_(
+                SysLog.occrrnc_de >= start_date,
+                SysLog.process_se_code.isnot(None)
+            )
+        ).group_by(SysLog.process_se_code).all()
+        requests_by_process_type = {process: count for process, count in process_requests}
+        
+        # 평균 처리시간 (문자열을 숫자로 변환하여 계산)
+        try:
+            avg_process_time_result = db.query(
+                func.avg(func.cast(SysLog.process_time, Numeric))
+            ).filter(
+                and_(
+                    SysLog.occrrnc_de >= start_date,
+                    SysLog.process_time.isnot(None),
+                    SysLog.process_time != '',
+                    func.length(SysLog.process_time) > 0
+                )
+            ).scalar()
+            avg_process_time = float(avg_process_time_result) if avg_process_time_result else 0.0
+        except Exception as e:
+            logger.warning(f"평균 처리시간 계산 중 오류: {e}")
+            avg_process_time = 0.0
+        
+        # 상위 사용자 목록
+        top_users = db.query(
+            SysLog.rqester_id,
+            SysLog.rqester_nm,
+            func.count(SysLog.requst_id).label('request_count')
+        ).filter(
+            and_(
+                SysLog.occrrnc_de >= start_date,
+                SysLog.rqester_id.isnot(None)
+            )
+        ).group_by(
+            SysLog.rqester_id, SysLog.rqester_nm
+        ).order_by(
+            desc('request_count')
+        ).limit(10).all()
+        
+        top_users_list = [
+            {
+                "user_id": user_id,
+                "user_name": user_name or "알 수 없음",
+                "request_count": count
+            }
+            for user_id, user_name, count in top_users
+        ]
+        
+        # 오류율 계산
+        error_requests = db.query(func.count(SysLog.requst_id)).filter(
+            and_(
+                SysLog.occrrnc_de >= start_date,
+                SysLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL'])
+            )
+        ).scalar() or 0
+        
+        error_rate = (error_requests / total_requests * 100) if total_requests > 0 else 0.0
+        
+        return LogStatistics(
+            total_requests=total_requests,
+            unique_users=unique_users,
+            requests_by_hour=requests_by_hour,
+            requests_by_menu=requests_by_menu,
+            requests_by_process_type=requests_by_process_type,
+            average_process_time=float(avg_process_time),
+            top_users=top_users_list,
+            error_rate=error_rate
+        )
 
 
 class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
@@ -168,6 +345,25 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
     
     def __init__(self):
         super().__init__(WebLog)
+    
+    def get_by_conect_id(self, db: Session, conect_id: str) -> Optional[WebLog]:
+        """
+        요청 ID로 웹 로그 조회
+        
+        Args:
+            db: 데이터베이스 세션
+            conect_id: 요청 ID (requst_id)
+            
+        Returns:
+            웹 로그 객체 또는 None
+        """
+        try:
+            return db.query(WebLog).filter(WebLog.requst_id == conect_id).first()
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"웹 로그 조회 중 오류가 발생했습니다: {str(e)}"
+            )
     
     def get_multi(
         self, 
@@ -273,13 +469,16 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
         total = query.count()
         
         # 페이지네이션 적용
-        logs = query.order_by(desc(WebLog.rqest_de)).offset(skip).limit(limit).all()
+        logs = query.order_by(desc(WebLog.occrrnc_de)).offset(skip).limit(limit).all()
         
         return logs, total
     
-    def get_popular_pages(self, db: Session, days: int = 30, limit: int = 10) -> List[Dict[str, Any]]:
+    def get_popular_pages(self, db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None, limit: int = 10) -> List[Dict[str, Any]]:
         """인기 페이지 조회"""
-        start_date = datetime.now() - timedelta(days=days)
+        if start_date is None:
+            start_date = datetime.now() - timedelta(days=30)
+        if end_date is None:
+            end_date = datetime.now()
         
         popular_pages = db.query(
             WebLog.trget_menu_nm,
@@ -287,6 +486,7 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
         ).filter(
             and_(
                 WebLog.rqest_de >= start_date,
+                WebLog.rqest_de <= end_date,
                 WebLog.trget_menu_nm.isnot(None)
             )
         ).group_by(WebLog.trget_menu_nm).order_by(
@@ -298,9 +498,12 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
             for menu_name, count in popular_pages
         ]
     
-    def get_hourly_traffic(self, db: Session, date: datetime) -> List[Dict[str, Any]]:
+    def get_hourly_traffic(self, db: Session, target_date: Optional[date] = None) -> List[Dict[str, Any]]:
         """시간별 트래픽 조회"""
-        start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+        if target_date is None:
+            target_date = datetime.now().date()
+        
+        start_date = datetime.combine(target_date, datetime.min.time())
         end_date = start_date + timedelta(days=1)
         
         hourly_traffic = db.query(
@@ -319,6 +522,88 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
             {"hour": int(hour), "request_count": count}
             for hour, count in hourly_traffic
         ]
+    
+    def remove(self, db: Session, requst_id: str) -> bool:
+        """
+        웹 로그를 삭제합니다.
+        
+        Args:
+            db: 데이터베이스 세션
+            requst_id: 삭제할 웹 로그의 요청 ID
+            
+        Returns:
+            삭제 성공 여부
+        """
+        try:
+            weblog = db.query(WebLog).filter(WebLog.requst_id == requst_id).first()
+            if not weblog:
+                return False
+            
+            db.delete(weblog)
+            db.commit()
+            return True
+            
+        except Exception as e:
+            logger.error(f"웹 로그 삭제 중 오류 발생: {e}")
+            db.rollback()
+            raise
+    
+    def get_user_logs(self, db: Session, user_id: str, skip: int = 0, limit: int = 100) -> Tuple[List[WebLog], int]:
+        """사용자별 웹 로그 조회"""
+        try:
+            query = db.query(WebLog).filter(WebLog.rqester_id == user_id)
+            total = query.count()
+            items = query.order_by(desc(WebLog.rqest_de)).offset(skip).limit(limit).all()
+            return items, total
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"사용자 웹 로그 조회 중 오류가 발생했습니다: {str(e)}"
+            )
+    
+    def get_error_logs(self, db: Session, skip: int = 0, limit: int = 100) -> Tuple[List[WebLog], int]:
+        """오류 웹 로그 조회"""
+        try:
+            query = db.query(WebLog).filter(
+                WebLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL'])
+            )
+            total = query.count()
+            items = query.order_by(desc(WebLog.rqest_de)).offset(skip).limit(limit).all()
+            return items, total
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"오류 웹 로그 조회 중 오류가 발생했습니다: {str(e)}"
+            )
+    
+    def get_by_log_id(self, db: Session, log_id: str) -> Optional[WebLog]:
+        """로그 ID로 웹 로그 조회"""
+        try:
+            return db.query(WebLog).filter(WebLog.requst_id == log_id).first()
+        except SQLAlchemyError as e:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"웹 로그 조회 중 오류가 발생했습니다: {str(e)}"
+            )
+    
+    def delete(self, db: Session, log_id: str) -> bool:
+        """웹 로그 삭제"""
+        try:
+            db_obj = self.get_by_log_id(db, log_id)
+            if not db_obj:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="해당 로그를 찾을 수 없습니다."
+                )
+            db.delete(db_obj)
+            db.commit()
+            return True
+        except SQLAlchemyError as e:
+            db.rollback()
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"웹 로그 삭제 중 오류가 발생했습니다: {str(e)}"
+            )
 
 
 class ProgrmListService(BaseService[ProgrmList, ProgrmListCreate, ProgrmListUpdate]):
@@ -475,6 +760,10 @@ class SystemMonitoringService:
         self.syslog_service = SysLogService()
         self.weblog_service = WebLogService()
     
+    def get_system_health(self, db: Session) -> SystemHealthCheck:
+        """시스템 상태 확인 (라우터 호환성을 위한 메서드)"""
+        return self.get_system_health_check(db)
+    
     def get_system_health_check(self, db: Session) -> SystemHealthCheck:
         """시스템 상태 확인"""
         try:
@@ -493,16 +782,16 @@ class SystemMonitoringService:
         
         log_count_today = db.query(func.count(SysLog.requst_id)).filter(
             and_(
-                SysLog.rqest_de >= today,
-                SysLog.rqest_de < tomorrow
+                SysLog.occrrnc_de >= today,
+                SysLog.occrrnc_de < tomorrow
             )
         ).scalar() or 0
         
         # 오늘 오류 수 조회
         error_count_today = db.query(func.count(SysLog.requst_id)).filter(
             and_(
-                SysLog.rqest_de >= today,
-                SysLog.rqest_de < tomorrow,
+                SysLog.occrrnc_de >= today,
+                SysLog.occrrnc_de < tomorrow,
                 SysLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL'])
             )
         ).scalar() or 0
@@ -512,8 +801,8 @@ class SystemMonitoringService:
             func.count(func.distinct(SysLog.rqester_id))
         ).filter(
             and_(
-                SysLog.rqest_de >= today,
-                SysLog.rqest_de < tomorrow,
+                SysLog.occrrnc_de >= today,
+                SysLog.occrrnc_de < tomorrow,
                 SysLog.rqester_id.isnot(None)
             )
         ).scalar() or 0
@@ -543,13 +832,16 @@ class SystemMonitoringService:
             cpu_usage=cpu_usage
         )
     
-    def get_log_statistics(self, db: Session, days: int = 30) -> LogStatistics:
+    def get_log_statistics(self, db: Session, start_date: Optional[datetime] = None, end_date: Optional[datetime] = None) -> LogStatistics:
         """로그 통계 조회"""
-        start_date = datetime.now() - timedelta(days=days)
+        if start_date is None:
+            start_date = datetime.now() - timedelta(days=30)
+        if end_date is None:
+            end_date = datetime.now()
         
         # 전체 요청 수
         total_requests = db.query(func.count(SysLog.requst_id)).filter(
-            SysLog.rqest_de >= start_date
+            SysLog.occrrnc_de >= start_date
         ).scalar() or 0
         
         # 고유 사용자 수
@@ -557,19 +849,19 @@ class SystemMonitoringService:
             func.count(func.distinct(SysLog.rqester_id))
         ).filter(
             and_(
-                SysLog.rqest_de >= start_date,
+                SysLog.occrrnc_de >= start_date,
                 SysLog.rqester_id.isnot(None)
             )
         ).scalar() or 0
         
         # 시간별 요청 수
         hourly_requests = db.query(
-            func.extract('hour', SysLog.rqest_de).label('hour'),
+            func.extract('hour', SysLog.occrrnc_de).label('hour'),
             func.count(SysLog.requst_id).label('count')
         ).filter(
-            SysLog.rqest_de >= start_date
+            SysLog.occrrnc_de >= start_date
         ).group_by(
-            func.extract('hour', SysLog.rqest_de)
+            func.extract('hour', SysLog.occrrnc_de)
         ).all()
         requests_by_hour = {str(int(hour)): count for hour, count in hourly_requests}
         
@@ -579,7 +871,7 @@ class SystemMonitoringService:
             func.count(SysLog.requst_id).label('count')
         ).filter(
             and_(
-                SysLog.rqest_de >= start_date,
+                SysLog.occrrnc_de >= start_date,
                 SysLog.trget_menu_nm.isnot(None)
             )
         ).group_by(SysLog.trget_menu_nm).all()
@@ -591,7 +883,7 @@ class SystemMonitoringService:
             func.count(SysLog.requst_id).label('count')
         ).filter(
             and_(
-                SysLog.rqest_de >= start_date,
+                SysLog.occrrnc_de >= start_date,
                 SysLog.process_se_code.isnot(None)
             )
         ).group_by(SysLog.process_se_code).all()
@@ -602,7 +894,7 @@ class SystemMonitoringService:
             func.avg(SysLog.process_time)
         ).filter(
             and_(
-                SysLog.rqest_de >= start_date,
+                SysLog.occrrnc_de >= start_date,
                 SysLog.process_time.isnot(None)
             )
         ).scalar() or 0.0
@@ -614,7 +906,7 @@ class SystemMonitoringService:
             func.count(SysLog.requst_id).label('request_count')
         ).filter(
             and_(
-                SysLog.rqest_de >= start_date,
+                SysLog.occrrnc_de >= start_date,
                 SysLog.rqester_id.isnot(None)
             )
         ).group_by(
@@ -635,7 +927,7 @@ class SystemMonitoringService:
         # 오류율 계산
         error_requests = db.query(func.count(SysLog.requst_id)).filter(
             and_(
-                SysLog.rqest_de >= start_date,
+                SysLog.occrrnc_de >= start_date,
                 SysLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL'])
             )
         ).scalar() or 0
@@ -668,8 +960,8 @@ class SystemMonitoringService:
             func.count(func.distinct(SysLog.rqester_id))
         ).filter(
             and_(
-                SysLog.rqest_de >= today,
-                SysLog.rqest_de < tomorrow,
+                SysLog.occrrnc_de >= today,
+                SysLog.occrrnc_de < tomorrow,
                 SysLog.rqester_id.isnot(None)
             )
         ).scalar() or 0
@@ -677,16 +969,16 @@ class SystemMonitoringService:
         # 오늘 총 요청 수
         total_requests_today = db.query(func.count(SysLog.requst_id)).filter(
             and_(
-                SysLog.rqest_de >= today,
-                SysLog.rqest_de < tomorrow
+                SysLog.occrrnc_de >= today,
+                SysLog.occrrnc_de < tomorrow
             )
         ).scalar() or 0
         
         # 오늘 오류 요청 수
         error_requests_today = db.query(func.count(SysLog.requst_id)).filter(
             and_(
-                SysLog.rqest_de >= today,
-                SysLog.rqest_de < tomorrow,
+                SysLog.occrrnc_de >= today,
+                SysLog.occrrnc_de < tomorrow,
                 SysLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL'])
             )
         ).scalar() or 0
@@ -698,7 +990,7 @@ class SystemMonitoringService:
             func.count(SysLog.requst_id).label('count')
         ).filter(
             and_(
-                SysLog.rqest_de >= week_ago,
+                SysLog.occrrnc_de >= week_ago,
                 SysLog.trget_menu_nm.isnot(None)
             )
         ).group_by(SysLog.trget_menu_nm).order_by(
@@ -713,7 +1005,7 @@ class SystemMonitoringService:
         # 최근 활동 목록
         recent_activities = db.query(SysLog).filter(
             SysLog.rqester_id.isnot(None)
-        ).order_by(desc(SysLog.rqest_de)).limit(10).all()
+        ).order_by(desc(SysLog.occrrnc_de)).limit(10).all()
         
         recent_activities_list = [
             {
@@ -721,7 +1013,7 @@ class SystemMonitoringService:
                 "user_name": log.rqester_nm or "알 수 없음",
                 "menu_name": log.trget_menu_nm or "알 수 없음",
                 "action": log.process_se_code or "알 수 없음",
-                "timestamp": log.rqest_de.isoformat() if log.rqest_de else None
+                "timestamp": log.occrrnc_de.isoformat() if log.occrrnc_de else None
             }
             for log in recent_activities
         ]
@@ -729,16 +1021,16 @@ class SystemMonitoringService:
         # 시스템 알림 목록 (최근 오류 로그)
         system_alerts = db.query(SysLog).filter(
             and_(
-                SysLog.rqest_de >= week_ago,
+                SysLog.occrrnc_de >= week_ago,
                 SysLog.process_se_code.in_(['ERROR', 'EXCEPTION', 'FAIL'])
             )
-        ).order_by(desc(SysLog.rqest_de)).limit(5).all()
+        ).order_by(desc(SysLog.occrrnc_de)).limit(5).all()
         
         system_alerts_list = [
             {
                 "type": "error",
                 "message": log.process_cn or "시스템 오류 발생",
-                "timestamp": log.rqest_de.isoformat() if log.rqest_de else None,
+                "timestamp": log.occrrnc_de.isoformat() if log.occrrnc_de else None,
                 "user_id": log.rqester_id
             }
             for log in system_alerts

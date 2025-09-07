@@ -168,7 +168,14 @@
 ## 🧪 테스트 규칙
 
 ### 7.1 테스트 구조
-- `test/` 디렉토리에 테스트 코드 구성
+- `/backend/app/test/` 디렉토리에 테스트 코드 구성
+- `/backend/app/test/unit/` 디렉토리에 단위 테스트 코드 구성
+- `/backend/app/test/integration/` 디렉토리에 통합 테스트 코드 구성
+- `/backend/app/test/e2e/` 디렉토리에 E2E 테스트 코드 구성
+- `/backend/app/check/` 디렉토리에 체크 스크립트 구성
+- `/backend/app/check/unit/` 디렉토리에 단위 테스트 체크 스크립트 구성
+- `/backend/app/check/integration/` 디렉토리에 통합 테스트 체크 스크립트 구성
+- `/backend/app/check/e2e/` 디렉토리에 E2E 테스트 체크 스크립트 구성
 - pytest 프레임워크 사용
 - 단위 테스트, 통합 테스트, E2E 테스트 구분
 
@@ -184,6 +191,11 @@
 - 다양한 파일 형식 업로드 테스트
 - 에러 시나리오 및 예외 처리 테스트
 - 성능 및 부하 테스트
+
+## 문서 데이터
+- 'backend/docs' 디렉토리에 가이드 문서 구성
+- 가이드, API 문서, 데이터베이스 스키마
+- 개발자 가이드, 운영 가이드, 사용자 가이드
 
 ---
 

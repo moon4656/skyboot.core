@@ -42,7 +42,7 @@ async def get_group_codes(
     skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),
     limit: int = Query(100, ge=1, le=1000, description="조회할 최대 레코드 수"),
     search: Optional[str] = Query(None, description="검색어 (그룹코드명, 그룹코드설명)"),
-    use_at: Optional[str] = Query(None, description="사용 여부 (Y/N)"),
+    use_yn: Optional[str] = Query(None, description="사용 여부 (Y/N)"),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -52,14 +52,14 @@ async def get_group_codes(
     - **skip**: 건너뛸 레코드 수 (페이징)
     - **limit**: 조회할 최대 레코드 수
     - **search**: 검색어 (그룹코드명, 그룹코드설명에서 검색)
-    - **use_at**: 사용 여부로 필터링
+    - **use_yn**: 사용 여부로 필터링
     """
     try:
         grp_code_service = CmmnGrpCodeService()
         group_codes = grp_code_service.search_group_codes(
             db=db,
             search_term=search,
-            use_at=use_at,
+            use_yn=use_yn,
             skip=skip,
             limit=limit
         )
@@ -177,15 +177,15 @@ async def create_group_code(
         # 중복 확인
         existing_code = grp_code_service.get_by_group_code_id(
             db=db, 
-            group_code_id=group_code_data.group_code_id
+            group_code_id=group_code_data.code_id
         )
         if existing_code:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"이미 존재하는 그룹 코드 ID입니다: {group_code_data.group_code_id}"
+                detail=f"이미 존재하는 그룹 코드 ID입니다: {group_code_data.code_id}"
             )
         
-        group_code = grp_code_service.create(db=db, obj_in=group_code_data)
+        group_code = grp_code_service.create_group_code(db=db, group_data=group_code_data.dict(), user_id=current_user['user_id'])
         return group_code
         
     except HTTPException:
@@ -258,10 +258,11 @@ async def update_group_code(
                 detail=f"그룹 코드를 찾을 수 없습니다: {group_code_id}"
             )
         
-        updated_group_code = grp_code_service.update(
+        updated_group_code = grp_code_service.update_group_code(
             db=db,
-            db_obj=group_code,
-            obj_in=group_code_data
+            group_code_id=group_code_id,
+            update_data=group_code_data.dict(exclude_unset=True),
+            user_id='SYSTEM'
         )
         
         return updated_group_code
@@ -294,7 +295,7 @@ async def delete_group_code(
                 detail=f"그룹 코드를 찾을 수 없습니다: {group_code_id}"
             )
         
-        grp_code_service.soft_delete(db=db, db_obj=group_code)
+        grp_code_service.delete_group_code(group_code_id=group_code_id, user_id="system", db=db)
         
         return {"message": f"그룹 코드가 삭제되었습니다: {group_code_id}"}
         
@@ -315,7 +316,7 @@ async def get_codes(
     limit: int = Query(100, ge=1, le=1000, description="조회할 최대 레코드 수"),
     group_code_id: Optional[str] = Query(None, description="그룹 코드 ID"),
     search: Optional[str] = Query(None, description="검색어 (코드명, 코드설명)"),
-    use_at: Optional[str] = Query(None, description="사용 여부 (Y/N)"),
+    use_yn: Optional[str] = Query(None, description="사용 여부 (Y/N)"),
     db: Session = Depends(get_db)
 ):
     """
@@ -325,26 +326,20 @@ async def get_codes(
     - **limit**: 조회할 최대 레코드 수
     - **group_code_id**: 그룹 코드 ID로 필터링
     - **search**: 검색어 (코드명, 코드설명에서 검색)
-    - **use_at**: 사용 여부로 필터링
+    - **use_yn**: 사용 여부로 필터링
     """
     try:
         code_service = CmmnCodeService()
         if group_code_id:
             codes = code_service.get_codes_by_group(
                 db=db,
-                group_code_id=group_code_id,
-                skip=skip,
-                limit=limit
+                group_code_id=group_code_id
             )
         else:
-            search_params = CmmnCodeSearchParams(
-                search_term=search,
-                group_code_id=group_code_id,
-                use_at=use_at
-            )
             codes = code_service.search_codes(
                 db=db,
-                search_params=search_params,
+                group_id=group_code_id,
+                search_term=search,
                 skip=skip,
                 limit=limit
             )
@@ -381,8 +376,7 @@ async def get_codes_by_group(
         code_service = CmmnCodeService()
         codes = code_service.get_codes_by_group(
             db=db,
-            group_code_id=group_code_id,
-            use_at=use_at
+            group_code_id=group_code_id
         )
         
         return codes
@@ -404,7 +398,7 @@ async def get_code_statistics(
     try:
         code_service = CmmnCodeService()
         statistics = code_service.get_code_statistics(db=db)
-        return statistics
+        return CmmnCodeStatistics(**statistics)
         
     except Exception as e:
         raise HTTPException(
@@ -413,19 +407,21 @@ async def get_code_statistics(
         )
 
 
-@code_router.get("/{code_id}", response_model=CmmnCodeResponse, summary="공통 코드 상세 조회")
+@code_router.get("/{group_id}/{code_id}", response_model=CmmnCodeResponse, summary="공통 코드 상세 조회")
 async def get_code(
+    group_id: str,
     code_id: str,
     db: Session = Depends(get_db)
 ):
     """
     특정 공통 코드의 상세 정보를 조회합니다.
     
+    - **group_id**: 그룹 코드 ID
     - **code_id**: 코드 ID
     """
     try:
         code_service = CmmnCodeService()
-        code = code_service.get_by_code_id(db=db, code_id=code_id)
+        code = code_service.get_by_code_id(db=db, group_id=group_id, code_id=code_id)
         
         if not code:
             raise HTTPException(
@@ -472,14 +468,14 @@ async def create_code(
         
         # 중복 확인
         code_service = CmmnCodeService()
-        existing_code = code_service.get_by_code_id(db=db, code_id=code_data.code_id)
+        existing_code = code_service.get_by_code_id(db=db, group_id=code_data.code_id, code_id=code_data.code)
         if existing_code:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"이미 존재하는 코드 ID입니다: {code_data.code_id}"
+                detail=f"이미 존재하는 코드입니다: {code_data.code}"
             )
         
-        code = code_service.create(db=db, obj_in=code_data)
+        code = code_service.create_code(db=db, code_data=code_data.dict(), user_id=code_data.frst_register_id)
         return code
         
     except HTTPException:
@@ -491,8 +487,9 @@ async def create_code(
         )
 
 
-@code_router.put("/{code_id}", response_model=CmmnCodeResponse, summary="공통 코드 수정")
+@code_router.put("/{group_id}/{code_id}", response_model=CmmnCodeResponse, summary="공통 코드 수정")
 async def update_code(
+    group_id: str,
     code_id: str,
     code_data: CmmnCodeUpdate,
     db: Session = Depends(get_db)
@@ -500,21 +497,24 @@ async def update_code(
     """
     공통 코드 정보를 수정합니다.
     
+    - **group_id**: 그룹 코드 ID
     - **code_id**: 수정할 코드 ID
     """
     try:
         code_service = CmmnCodeService()
-        code = code_service.get_by_code_id(db=db, code_id=code_id)
+        code = code_service.get_by_code_id(db=db, group_id=group_id, code_id=code_id)
         if not code:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"공통 코드를 찾을 수 없습니다: {code_id}"
             )
         
-        updated_code = code_service.update(
+        updated_code = code_service.update_code(
             db=db,
-            db_obj=code,
-            obj_in=code_data
+            group_id=group_id,
+            code_id=code_id,
+            update_data=code_data.dict(),
+            user_id="system"
         )
         
         return updated_code
@@ -528,26 +528,33 @@ async def update_code(
         )
 
 
-@code_router.delete("/{code_id}", summary="공통 코드 삭제")
+@code_router.delete("/{group_id}/{code_id}", summary="공통 코드 삭제")
 async def delete_code(
+    group_id: str,
     code_id: str,
     db: Session = Depends(get_db)
 ):
     """
     공통 코드를 삭제합니다 (소프트 삭제).
     
+    - **group_id**: 그룹 코드 ID
     - **code_id**: 삭제할 코드 ID
     """
     try:
         code_service = CmmnCodeService()
-        code = code_service.get_by_code_id(db=db, code_id=code_id)
+        code = code_service.get_by_code_id(db=db, group_id=group_id, code_id=code_id)
         if not code:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail=f"공통 코드를 찾을 수 없습니다: {code_id}"
             )
         
-        code_service.soft_delete(db=db, db_obj=code)
+        code_service.delete_code(
+            db=db,
+            group_id=group_id,
+            code_id=code_id,
+            user_id="system"
+        )
         
         return {"message": f"공통 코드가 삭제되었습니다: {code_id}"}
         

@@ -1,0 +1,148 @@
+[
+  {
+    "test_name": "시스템 상태 확인",
+    "endpoint": "/api/v1/system/health",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T21:27:04.371914",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757248024.3697903}"
+  },
+  {
+    "test_name": "대시보드 요약 조회",
+    "endpoint": "/api/v1/system/dashboard",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T21:27:04.379803",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757248024.3769178}"
+  },
+  {
+    "test_name": "시스템 로그 생성",
+    "endpoint": "/api/v1/system/logs/",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T21:27:04.395877",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757248024.3925169}"
+  },
+  {
+    "test_name": "시스템 로그 목록 조회",
+    "endpoint": "/api/v1/system/logs/",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:27:04.407898",
+    "response_data": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 10,
+      "pages": 0
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "시스템 로그 검색",
+    "endpoint": "/api/v1/system/logs/search",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:27:04.418473",
+    "response_data": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 10,
+      "pages": 0
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "시스템 로그 통계 조회",
+    "endpoint": "/api/v1/system/logs/statistics",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T21:27:04.425956",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757248024.4233048}"
+  },
+  {
+    "test_name": "웹 로그 생성",
+    "endpoint": "/api/v1/system/web-logs/",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 422,
+    "success": false,
+    "timestamp": "2025-09-07T21:27:04.433870",
+    "response_data": null,
+    "error_message": "{\"detail\":[{\"type\":\"missing\",\"loc\":[\"body\",\"requst_id\"],\"msg\":\"Field required\",\"input\":{\"conect_id\":\"INTEGRATION_WEB_1757248024\",\"user_id\":\"integration_test_user\",\"ip_adres\":\"192.168.1.200\",\"conect_dt\":\"2025-09-07 21:27:04\",\"url\":\"/integration/test/page\",\"http_method\":\"GET\",\"user_agent\":\"Integration Test Agent\",\"referer\":\"https://test.example.com\",\"response_code\":200,\"response_time\":150,\"bytes_sent\":2048}}]}"
+  },
+  {
+    "test_name": "웹 로그 목록 조회",
+    "endpoint": "/api/v1/system/web-logs/",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:27:04.441642",
+    "response_data": {
+      "items": [
+        {
+          "occrrnc_de": null,
+          "url": null,
+          "rqester_id": "web_test_user",
+          "rqester_ip": "192.168.1.200",
+          "rqester_nm": "웹테스트사용자",
+          "trget_menu_nm": "웹테스트메뉴",
+          "process_se_code": "SUCCESS",
+          "process_cn": "수정된 웹 처리 내용",
+          "process_time": "1.200",
+          "rqest_de": null,
+          "requst_id": "WEB_TEST_1757209793",
+          "frst_regist_pnttm": "2025-09-07T10:49:55.783142",
+          "frst_register_id": null,
+          "last_updt_pnttm": "2025-09-07T10:50:01.879731",
+          "last_updusr_id": null
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "size": 10,
+      "pages": 1
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "인기 페이지 조회",
+    "endpoint": "/api/v1/system/web-logs/popular-pages",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:27:04.449406",
+    "response_data": [],
+    "error_message": null
+  },
+  {
+    "test_name": "시간별 트래픽 조회",
+    "endpoint": "/api/v1/system/web-logs/hourly-traffic",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:27:04.457941",
+    "response_data": [],
+    "error_message": null
+  }
+]

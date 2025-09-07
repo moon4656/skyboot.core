@@ -19,7 +19,7 @@ from app.schemas.system_schemas import (
     LogSearchParams,
     LogStatistics, SystemHealthCheck, DashboardSummary
 )
-from app.services.system_service import SysLogService, WebLogService
+from app.services.system_service import SysLogService, WebLogService, SystemMonitoringService
 from app.utils.auth import get_current_user_from_bearer
 
 router = APIRouter(prefix="/system", tags=["시스템 관리"])
@@ -27,8 +27,8 @@ router = APIRouter(prefix="/system", tags=["시스템 관리"])
 
 # ==================== SysLog 엔드포인트 ====================
 
-@router.post("/logs/", response_model=SysLogResponse, summary="시스템 로그 생성")
-async def create_system_log(
+@router.post("/logs/", response_model=SysLogResponse, status_code=status.HTTP_201_CREATED, summary="시스템 로그 생성")
+async def create_syslog(
     log_data: SysLogCreate,
     current_user: dict = Depends(get_current_user_from_bearer),
     db: Session = Depends(get_db)
@@ -204,14 +204,14 @@ async def delete_system_log(
     - **log_id**: 로그ID
     """
     service = SysLogService()
-    log = service.get_by_log_id(db, log_id)
-    if not log:
+    success = service.delete(db, log_id)
+    if success:
+        return {"message": "시스템 로그가 성공적으로 삭제되었습니다."}
+    else:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="시스템 로그를 찾을 수 없습니다."
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="시스템 로그 삭제에 실패했습니다."
         )
-    service.remove(db, log_id)
-    return {"message": "시스템 로그가 성공적으로 삭제되었습니다."}
 
 
 # ==================== WebLog 엔드포인트 ====================
@@ -433,11 +433,10 @@ async def get_system_health(
     - 최근 에러 발생 현황
     - 서비스 가용성
     """
-    # 여러 서비스를 통합하여 시스템 상태 확인
-    syslog_service = SysLogService()
-    weblog_service = WebLogService()
+    # 시스템 모니터링 서비스를 통해 상태 확인
+    monitoring_service = SystemMonitoringService()
     
-    return syslog_service.get_system_health(db)
+    return monitoring_service.get_system_health(db)
 
 
 @router.get("/dashboard", response_model=DashboardSummary, summary="대시보드 요약 정보")
@@ -453,8 +452,66 @@ async def get_dashboard_summary(
     - 시스템 알림
     - 성능 지표
     """
-    syslog_service = SysLogService()
-    return syslog_service.get_dashboard_summary(db)
+    monitoring_service = SystemMonitoringService()
+    return monitoring_service.syslog_service.get_dashboard_summary(db)
+
+
+@router.get("/logs/user/{user_id}", response_model=SysLogPagination, summary="사용자별 로그 조회")
+async def get_user_logs(
+    user_id: str,
+    days: int = Query(30, ge=1, le=365, description="조회 기간 (일)"),
+    skip: int = Query(0, ge=0, description="건너뛸 개수"),
+    limit: int = Query(100, ge=1, le=1000, description="조회할 개수"),
+    current_user: dict = Depends(get_current_user_from_bearer),
+    db: Session = Depends(get_db)
+):
+    """
+    특정 사용자의 로그를 조회합니다.
+    
+    - **user_id**: 사용자 ID
+    - **days**: 조회 기간 (일, 기본값: 30일)
+    """
+    service = SysLogService()
+    logs, total = service.get_user_logs(db, user_id, days, skip, limit)
+    
+    pages = (total + limit - 1) // limit
+    page = (skip // limit) + 1
+    
+    return SysLogPagination(
+        items=logs,
+        total=total,
+        page=page,
+        size=limit,
+        pages=pages
+    )
+
+
+@router.get("/logs/errors", response_model=SysLogPagination, summary="오류 로그 조회")
+async def get_error_logs(
+    days: int = Query(7, ge=1, le=365, description="조회 기간 (일)"),
+    skip: int = Query(0, ge=0, description="건너뛸 개수"),
+    limit: int = Query(100, ge=1, le=1000, description="조회할 개수"),
+    current_user: dict = Depends(get_current_user_from_bearer),
+    db: Session = Depends(get_db)
+):
+    """
+    오류 로그를 조회합니다.
+    
+    - **days**: 조회 기간 (일, 기본값: 7일)
+    """
+    service = SysLogService()
+    logs, total = service.get_error_logs(db, days, skip, limit)
+    
+    pages = (total + limit - 1) // limit
+    page = (skip // limit) + 1
+    
+    return SysLogPagination(
+        items=logs,
+        total=total,
+        page=page,
+        size=limit,
+        pages=pages
+    )
 
 
 @router.get("/logs/export", summary="로그 데이터 내보내기")

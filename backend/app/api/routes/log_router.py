@@ -15,7 +15,8 @@ from app.schemas.log_schemas import (
     LoginLogResponse, LoginLogCreate, LoginLogUpdate,
     LoginLogPagination, LoginLogSearchParams, LoginLogStatistics,
     SecurityAlertResponse, SuspiciousActivityResponse,
-    SessionManagementResponse, LogExportResponse, LogAnalysisResponse
+    SessionManagementResponse, LogExportResponse, LogAnalysisResponse,
+    LogAnalysisSimpleResponse
 )
 
 # 로그인 로그 라우터
@@ -72,11 +73,16 @@ async def get_login_logs(
         
         total_count = log_service.count(db=db)
         
+        # 페이지네이션 정보 계산
+        pages = (total_count + limit - 1) // limit
+        page = (skip // limit) + 1
+        
         return LoginLogPagination(
             items=logs,
             total=total_count,
-            skip=skip,
-            limit=limit
+            page=page,
+            size=limit,
+            pages=pages
         )
         
     except Exception as e:
@@ -179,37 +185,6 @@ async def get_failed_attempts(
         )
 
 
-@log_router.get("/{log_id}", response_model=LoginLogResponse, summary="로그인 로그 상세 조회")
-async def get_login_log(
-    log_id: int,
-    current_user: dict = Depends(get_current_user_from_bearer),
-    db: Session = Depends(get_db)
-):
-    """
-    특정 로그인 로그의 상세 정보를 조회합니다.
-    
-    - **log_id**: 로그 ID
-    """
-    try:
-        log_service = LoginLogService()
-        log = log_service.get_by_log_id(db=db, log_id=log_id)
-        
-        if not log:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"로그인 로그를 찾을 수 없습니다: {log_id}"
-            )
-        
-        return log
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"로그인 로그 조회 중 오류가 발생했습니다: {str(e)}"
-        )
-
 
 @log_router.post("/", response_model=LoginLogResponse, summary="로그인 로그 생성")
 async def create_login_log(
@@ -228,7 +203,14 @@ async def create_login_log(
     """
     try:
         log_service = LoginLogService()
-        log = log_service.create_login_log(db=db, log_data=log_data)
+        log = log_service.create_login_log(
+            db=db,
+            user_id=log_data.user_id,
+            ip_address=log_data.login_ip,
+            user_agent=getattr(log_data, 'user_agent', None),
+            login_status=log_data.login_result,
+            error_message=getattr(log_data, 'failure_reason', None)
+        )
         return log
         
     except Exception as e:
@@ -608,6 +590,7 @@ async def export_logs(
     start_date: Optional[datetime] = Query(None, description="시작 날짜"),
     end_date: Optional[datetime] = Query(None, description="종료 날짜"),
     user_id: Optional[str] = Query(None, description="사용자 ID"),
+    current_user: dict = Depends(get_current_user_from_bearer),
     db: Session = Depends(get_db)
 ):
     """
@@ -628,7 +611,7 @@ async def export_logs(
             user_id=user_id
         )
         
-        return export_data
+        return {"status": "success", "data": export_data, "format": format}
         
     except Exception as e:
         raise HTTPException(
@@ -637,10 +620,11 @@ async def export_logs(
         )
 
 
-@log_router.get("/analysis", response_model=LogAnalysisResponse, summary="로그 분석")
+@log_router.get("/analysis", response_model=LogAnalysisSimpleResponse, summary="로그 분석")
 async def analyze_logs(
     days: int = Query(30, ge=1, le=365, description="분석 기간 (일)"),
     analysis_type: str = Query("overview", description="분석 유형 (overview, security, performance)"),
+    current_user: dict = Depends(get_current_user_from_bearer),
     db: Session = Depends(get_db)
 ):
     """
@@ -657,10 +641,42 @@ async def analyze_logs(
             analysis_type=analysis_type
         )
         
-        return analysis_result
+        return {"status": "success", "analysis_type": analysis_type, "days": days, "result": analysis_result}
         
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"로그 분석 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@log_router.get("/{log_id}", response_model=LoginLogResponse, summary="로그인 로그 상세 조회")
+async def get_login_log(
+    log_id: int,
+    current_user: dict = Depends(get_current_user_from_bearer),
+    db: Session = Depends(get_db)
+):
+    """
+    특정 로그인 로그의 상세 정보를 조회합니다.
+    
+    - **log_id**: 로그 ID
+    """
+    try:
+        log_service = LoginLogService()
+        log = log_service.get_by_log_id(db=db, log_id=log_id)
+        
+        if not log:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail=f"로그인 로그를 찾을 수 없습니다: {log_id}"
+            )
+        
+        return log
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"로그인 로그 조회 중 오류가 발생했습니다: {str(e)}"
         )

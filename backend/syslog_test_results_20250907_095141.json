@@ -1,0 +1,96 @@
+[
+  {
+    "test_name": "시스템 로그 생성",
+    "endpoint": "/api/v1/system/logs/",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:40.981765",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757206300.9767973}"
+  },
+  {
+    "test_name": "시스템 로그 목록 조회",
+    "endpoint": "/api/v1/system/logs/",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T09:51:40.993617",
+    "response_data": {
+      "items": [],
+      "total": 0,
+      "page": 1,
+      "size": 100,
+      "pages": 0
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "시스템 로그 상세 조회",
+    "endpoint": "/api/v1/system/logs/TEST_1757206298",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:41.001885",
+    "response_data": null,
+    "error_message": "{\"detail\":\"시스템 로그를 찾을 수 없습니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 수정",
+    "endpoint": "/api/v1/system/logs/TEST_1757206298",
+    "method": "PUT",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:41.012820",
+    "response_data": null,
+    "error_message": "{\"detail\":\"시스템 로그를 찾을 수 없습니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 검색",
+    "endpoint": "/api/v1/system/logs/search",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:41.022285",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757206301.0194387}"
+  },
+  {
+    "test_name": "사용자별 로그 조회",
+    "endpoint": "/api/v1/system/logs/user/test_user",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:41.026640",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "오류 로그 조회",
+    "endpoint": "/api/v1/system/logs/errors",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:41.034079",
+    "response_data": null,
+    "error_message": "{\"detail\":\"시스템 로그를 찾을 수 없습니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 삭제",
+    "endpoint": "/api/v1/system/logs/TEST_1757206298",
+    "method": "DELETE",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T09:51:41.041037",
+    "response_data": null,
+    "error_message": "{\"detail\":\"시스템 로그를 찾을 수 없습니다.\"}"
+  }
+]

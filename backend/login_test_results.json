@@ -1,0 +1,70 @@
+[
+  {
+    "test_name": "Valid Login Test",
+    "success": true,
+    "timestamp": "2025-09-05T23:32:17.496153",
+    "details": {
+      "status_code": 200,
+      "token_type": "bearer",
+      "expires_in": 1800,
+      "user_id": "admin",
+      "access_token_length": 247,
+      "refresh_token_length": 248
+    },
+    "error": null
+  },
+  {
+    "test_name": "Token Refresh Test",
+    "success": true,
+    "timestamp": "2025-09-05T23:32:17.503359",
+    "details": {
+      "status_code": 200,
+      "token_type": "bearer",
+      "expires_in": 1800,
+      "new_access_token_length": 247
+    },
+    "error": null
+  },
+  {
+    "test_name": "Invalid Login Test",
+    "success": true,
+    "timestamp": "2025-09-05T23:32:17.511932",
+    "details": {
+      "status_code": 401,
+      "error_message": "사용자 ID 또는 비밀번호가 올바르지 않습니다."
+    },
+    "error": null
+  },
+  {
+    "test_name": "Empty Password Test",
+    "success": true,
+    "timestamp": "2025-09-05T23:32:17.517896",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_too_short",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "String should have at least 4 characters",
+          "input": "",
+          "ctx": {
+            "min_length": 4
+          }
+        }
+      ]
+    },
+    "error": null
+  },
+  {
+    "test_name": "Malformed Request Test",
+    "success": true,
+    "timestamp": "2025-09-05T23:32:17.522930",
+    "details": {
+      "status_code": 422
+    },
+    "error": null
+  }
+]

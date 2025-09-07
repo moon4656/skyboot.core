@@ -7,6 +7,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from sqlalchemy.orm import Session
 from datetime import datetime
+import logging
 
 from app.database import get_db
 from app.services import AuthorInfoService, LoginLogService
@@ -18,6 +19,8 @@ from app.schemas.auth_schemas import (
     TokenRefreshRequest, TokenRefreshResponse
 )
 from ...schemas.user_schemas import UserInfoBase, UserInfoResponse, UserInfoPagination
+
+logger = logging.getLogger(__name__)
 
 # 인증 라우터
 auth_router = APIRouter(
@@ -76,12 +79,16 @@ async def login_user(
             )
         
         # 로그인 성공 로그 기록
-        login_log_service.create_login_log(
-            db=db,
-            user_id=login_data.user_id,
-            ip_address=client_ip,
-            login_status="SUCCESS"
-        )
+        try:
+            login_log_service.create_login_log(
+                db=db,
+                user_id=login_data.user_id,
+                ip_address=client_ip,
+                login_status="SUCCESS"
+            )
+        except Exception as log_error:
+            # 로그 기록 실패 시에도 로그인 성공은 유지
+            logger.warning(f"로그인 성공 로그 기록 실패: {str(log_error)}")
         
         response = UserLoginResponse(
             access_token=auth_result["access_token"],

@@ -1,14 +1,14 @@
 # SkyBoot Core API 프로젝트 규칙 (Project Rules)
 
 ## 🎯 프로젝트 개요
-이 문서는 SkyBoot Core API 프로젝트의 개발 규칙과 가이드라인을 정의합니다. 모든 개발자는 이 규칙을 준수하여 일관성 있고 고품질의 코드를 작성해야 합니다.
+이 문서는 SkyBoot Core Framework 프로젝트의 개발 규칙과 가이드라인을 정의합니다. 모든 개발자는 이 규칙을 준수하여 일관성 있고 고품질의 코드를 작성해야 합니다.
 
 ---
 
 ## 🏗️ 프로젝트 아키텍처
 
 ### 기술 스택
-- **백엔드**: Python 3.11+, FastAPI, SQLAlchemy 2.0, PostgreSQL
+- **백엔드**: Python 3.12.7+, FastAPI, SQLAlchemy 2.0, PostgreSQL
 - **인증**: JWT 토큰 기반 인증
 - **데이터베이스**: PostgreSQL with Alembic 마이그레이션
 - **로깅**: Python logging 모듈, 구조화된 로깅
@@ -242,7 +242,14 @@ logger.error(f"Traceback: {traceback.format_exc()}")
 ## 🧪 테스트 규칙
 
 ### 테스트 구조
-- `test/` 디렉토리에 테스트 코드 구성
+- `/backend/app/test/` 디렉토리에 테스트 코드 구성
+- `/backend/app/test/unit/` 디렉토리에 단위 테스트 코드 구성
+- `/backend/app/test/integration/` 디렉토리에 통합 테스트 코드 구성
+- `/backend/app/test/e2e/` 디렉토리에 E2E 테스트 코드 구성  
+- `/backend/app/check/` 디렉토리에 체크 스크립트 구성
+- `/backend/app/check/unit/` 디렉토리에 단위 테스트 체크 스크립트 구성
+- `/backend/app/check/integration/` 디렉토리에 통합 테스트 체크 스크립트 구성
+- `/backend/app/check/e2e/` 디렉토리에 E2E 테스트 체크 스크립트 구성
 - pytest 프레임워크 사용
 - 단위 테스트, 통합 테스트, E2E 테스트 구분
 

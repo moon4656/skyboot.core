@@ -1,0 +1,217 @@
+[
+  {
+    "test_name": "웹 로그 생성",
+    "endpoint": "/api/v1/system/web-logs/",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 200,
+    "success": false,
+    "timestamp": "2025-09-07T21:23:23.647096",
+    "response_data": null,
+    "error_message": "{\"occrrnc_de\":null,\"url\":null,\"rqester_id\":\"web_test_user\",\"rqester_ip\":\"192.168.1.200\",\"rqester_nm\":\"웹테스트사용자\",\"trget_menu_nm\":\"웹테스트메뉴\",\"process_se_code\":\"SUCCESS\",\"process_cn\":\"웹 테스트 처리 내용\",\"process_time\":\"0.800\",\"rqest_de\":null,\"requst_id\":\"WEB_TEST_1757247801\",\"frst_regist_pnttm\":\"2025-09-07T21:23:23.635441\",\"frst_register_id\":null,\"last_updt_pnttm\":null,\"last_updusr_id\":null}"
+  },
+  {
+    "test_name": "웹 로그 목록 조회",
+    "endpoint": "/api/v1/system/web-logs/",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:23:25.687807",
+    "response_data": {
+      "items": [
+        {
+          "occrrnc_de": null,
+          "url": null,
+          "rqester_id": "web_test_user",
+          "rqester_ip": "192.168.1.200",
+          "rqester_nm": "웹테스트사용자",
+          "trget_menu_nm": "웹테스트메뉴",
+          "process_se_code": "SUCCESS",
+          "process_cn": "수정된 웹 처리 내용",
+          "process_time": "1.200",
+          "rqest_de": null,
+          "requst_id": "WEB_TEST_1757209793",
+          "frst_regist_pnttm": "2025-09-07T10:49:55.783142",
+          "frst_register_id": null,
+          "last_updt_pnttm": "2025-09-07T10:50:01.879731",
+          "last_updusr_id": null
+        },
+        {
+          "occrrnc_de": null,
+          "url": null,
+          "rqester_id": "web_test_user",
+          "rqester_ip": "192.168.1.200",
+          "rqester_nm": "웹테스트사용자",
+          "trget_menu_nm": "웹테스트메뉴",
+          "process_se_code": "SUCCESS",
+          "process_cn": "웹 테스트 처리 내용",
+          "process_time": "0.800",
+          "rqest_de": null,
+          "requst_id": "WEB_TEST_1757247801",
+          "frst_regist_pnttm": "2025-09-07T21:23:23.635441",
+          "frst_register_id": null,
+          "last_updt_pnttm": null,
+          "last_updusr_id": null
+        }
+      ],
+      "total": 2,
+      "page": 1,
+      "size": 100,
+      "pages": 1
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "웹 로그 상세 조회",
+    "endpoint": "/api/v1/system/web-logs/WEB_TEST_1757247801",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:23:27.766750",
+    "response_data": {
+      "occrrnc_de": null,
+      "url": null,
+      "rqester_id": "web_test_user",
+      "rqester_ip": "192.168.1.200",
+      "rqester_nm": "웹테스트사용자",
+      "trget_menu_nm": "웹테스트메뉴",
+      "process_se_code": "SUCCESS",
+      "process_cn": "웹 테스트 처리 내용",
+      "process_time": "0.800",
+      "rqest_de": null,
+      "requst_id": "WEB_TEST_1757247801",
+      "frst_regist_pnttm": "2025-09-07T21:23:23.635441",
+      "frst_register_id": null,
+      "last_updt_pnttm": null,
+      "last_updusr_id": null
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "웹 로그 수정",
+    "endpoint": "/api/v1/system/web-logs/WEB_TEST_1757247801",
+    "method": "PUT",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:23:29.825768",
+    "response_data": {
+      "occrrnc_de": null,
+      "url": null,
+      "rqester_id": "web_test_user",
+      "rqester_ip": "192.168.1.200",
+      "rqester_nm": "웹테스트사용자",
+      "trget_menu_nm": "웹테스트메뉴",
+      "process_se_code": "SUCCESS",
+      "process_cn": "수정된 웹 처리 내용",
+      "process_time": "1.200",
+      "rqest_de": null,
+      "requst_id": "WEB_TEST_1757247801",
+      "frst_regist_pnttm": "2025-09-07T21:23:23.635441",
+      "frst_register_id": null,
+      "last_updt_pnttm": "2025-09-07T21:23:29.814275",
+      "last_updusr_id": null
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "웹 로그 검색",
+    "endpoint": "/api/v1/system/web-logs/search",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:23:31.898445",
+    "response_data": {
+      "items": [
+        {
+          "occrrnc_de": null,
+          "url": null,
+          "rqester_id": "web_test_user",
+          "rqester_ip": "192.168.1.200",
+          "rqester_nm": "웹테스트사용자",
+          "trget_menu_nm": "웹테스트메뉴",
+          "process_se_code": "SUCCESS",
+          "process_cn": "수정된 웹 처리 내용",
+          "process_time": "1.200",
+          "rqest_de": null,
+          "requst_id": "WEB_TEST_1757209793",
+          "frst_regist_pnttm": "2025-09-07T10:49:55.783142",
+          "frst_register_id": null,
+          "last_updt_pnttm": "2025-09-07T10:50:01.879731",
+          "last_updusr_id": null
+        },
+        {
+          "occrrnc_de": null,
+          "url": null,
+          "rqester_id": "web_test_user",
+          "rqester_ip": "192.168.1.200",
+          "rqester_nm": "웹테스트사용자",
+          "trget_menu_nm": "웹테스트메뉴",
+          "process_se_code": "SUCCESS",
+          "process_cn": "수정된 웹 처리 내용",
+          "process_time": "1.200",
+          "rqest_de": null,
+          "requst_id": "WEB_TEST_1757247801",
+          "frst_regist_pnttm": "2025-09-07T21:23:23.635441",
+          "frst_register_id": null,
+          "last_updt_pnttm": "2025-09-07T21:23:29.814275",
+          "last_updusr_id": null
+        }
+      ],
+      "total": 2,
+      "page": 1,
+      "size": 100,
+      "pages": 1
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "인기 페이지 조회",
+    "endpoint": "/api/v1/system/weblogs/popular-pages",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:23:33.930573",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "시간별 트래픽 조회",
+    "endpoint": "/api/v1/system/weblogs/hourly-traffic",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:23:35.977307",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "웹 로그 통계 조회",
+    "endpoint": "/api/v1/system/web-logs/statistics",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:23:38.040883",
+    "response_data": null,
+    "error_message": "{\"detail\":\"웹 로그를 찾을 수 없습니다.\"}"
+  },
+  {
+    "test_name": "웹 로그 삭제",
+    "endpoint": "/api/v1/system/web-logs/WEB_TEST_1757247801",
+    "method": "DELETE",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T21:23:40.113022",
+    "response_data": {
+      "message": "웹 로그가 성공적으로 삭제되었습니다."
+    },
+    "error_message": null
+  }
+]

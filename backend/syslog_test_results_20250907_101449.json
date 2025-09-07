@@ -1,0 +1,142 @@
+[
+  {
+    "test_name": "시스템 로그 생성",
+    "endpoint": "/api/v1/system/logs/",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 200,
+    "success": false,
+    "timestamp": "2025-09-07T10:14:49.223960",
+    "response_data": null,
+    "error_message": "{\"requst_id\":\"TEST_1757207686\",\"job_se_code\":\"001\",\"instt_code\":\"1234567\",\"occrrnc_de\":\"2025-09-07T10:14:49.210482\",\"rqester_ip\":\"192.168.1.100\",\"rqester_id\":\"test_user\",\"trget_menu_nm\":\"테스트메뉴\",\"svc_nm\":\"테스트서비스\",\"method_nm\":\"test_method\",\"process_se_code\":\"SUC\",\"process_co\":\"1\",\"process_time\":\"1500\",\"rspns_code\":\"200\",\"error_se\":\"N\",\"error_co\":\"0\",\"error_code\":null,\"frst_regist_pnttm\":\"2025-09-07T10:14:49.215223\",\"frst_register_id\":null,\"last_updt_pnttm\":null,\"last_updusr_id\":null}"
+  },
+  {
+    "test_name": "시스템 로그 목록 조회",
+    "endpoint": "/api/v1/system/logs/",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T10:14:49.234794",
+    "response_data": {
+      "items": [
+        {
+          "requst_id": "TEST_1757207686",
+          "job_se_code": "001",
+          "instt_code": "1234567",
+          "occrrnc_de": "2025-09-07T10:14:49.210482",
+          "rqester_ip": "192.168.1.100",
+          "rqester_id": "test_user",
+          "trget_menu_nm": "테스트메뉴",
+          "svc_nm": "테스트서비스",
+          "method_nm": "test_method",
+          "process_se_code": "SUC",
+          "process_co": "1",
+          "process_time": "1500",
+          "rspns_code": "200",
+          "error_se": "N",
+          "error_co": "0",
+          "error_code": null,
+          "frst_regist_pnttm": "2025-09-07T10:14:49.215223",
+          "frst_register_id": null,
+          "last_updt_pnttm": null,
+          "last_updusr_id": null
+        }
+      ],
+      "total": 1,
+      "page": 1,
+      "size": 100,
+      "pages": 1
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "시스템 로그 상세 조회",
+    "endpoint": "/api/v1/system/logs/TEST_1757207686",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T10:14:49.258897",
+    "response_data": {
+      "requst_id": "TEST_1757207686",
+      "job_se_code": "001",
+      "instt_code": "1234567",
+      "occrrnc_de": "2025-09-07T10:14:49.210482",
+      "rqester_ip": "192.168.1.100",
+      "rqester_id": "test_user",
+      "trget_menu_nm": "테스트메뉴",
+      "svc_nm": "테스트서비스",
+      "method_nm": "test_method",
+      "process_se_code": "SUC",
+      "process_co": "1",
+      "process_time": "1500",
+      "rspns_code": "200",
+      "error_se": "N",
+      "error_co": "0",
+      "error_code": null,
+      "frst_regist_pnttm": "2025-09-07T10:14:49.215223",
+      "frst_register_id": null,
+      "last_updt_pnttm": null,
+      "last_updusr_id": null
+    },
+    "error_message": null
+  },
+  {
+    "test_name": "시스템 로그 수정",
+    "endpoint": "/api/v1/system/logs/TEST_1757207686",
+    "method": "PUT",
+    "expected_status": 200,
+    "actual_status": 422,
+    "success": false,
+    "timestamp": "2025-09-07T10:14:49.275867",
+    "response_data": null,
+    "error_message": "{\"detail\":[{\"type\":\"string_type\",\"loc\":[\"body\",\"process_time\"],\"msg\":\"Input should be a valid string\",\"input\":2.0}]}"
+  },
+  {
+    "test_name": "시스템 로그 검색",
+    "endpoint": "/api/v1/system/logs/search",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T10:14:49.293632",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757207689.2894318}"
+  },
+  {
+    "test_name": "사용자별 로그 조회",
+    "endpoint": "/api/v1/system/logs/user/test_user",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T10:14:49.300690",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "오류 로그 조회",
+    "endpoint": "/api/v1/system/logs/errors",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T10:14:49.308654",
+    "response_data": null,
+    "error_message": "{\"detail\":\"시스템 로그를 찾을 수 없습니다.\"}"
+  },
+  {
+    "test_name": "시스템 로그 삭제",
+    "endpoint": "/api/v1/system/logs/TEST_1757207686",
+    "method": "DELETE",
+    "expected_status": 200,
+    "actual_status": 200,
+    "success": true,
+    "timestamp": "2025-09-07T10:14:49.320749",
+    "response_data": {
+      "message": "시스템 로그가 성공적으로 삭제되었습니다."
+    },
+    "error_message": null
+  }
+]

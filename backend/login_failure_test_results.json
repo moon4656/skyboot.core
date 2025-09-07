@@ -1,0 +1,329 @@
+[
+  {
+    "test_name": "실패 케이스: wrong_password",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:28.246189",
+    "details": {
+      "status_code": 401,
+      "error_message": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+      "test_data": {
+        "user_id": "admin",
+        "password": "wrongpassword123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: wrong_user_id",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.842318",
+    "details": {
+      "status_code": 401,
+      "error_message": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+      "test_data": {
+        "user_id": "nonexistent_user",
+        "password": "admin123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: empty_user_id",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.852259",
+    "details": {
+      "status_code": 401,
+      "error_message": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+      "test_data": {
+        "user_id": "",
+        "password": "admin123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: empty_password",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.857907",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_too_short",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "String should have at least 4 characters",
+          "input": "",
+          "ctx": {
+            "min_length": 4
+          }
+        }
+      ],
+      "test_data": {
+        "user_id": "admin",
+        "password": ""
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: short_password",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.862908",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_too_short",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "String should have at least 4 characters",
+          "input": "123",
+          "ctx": {
+            "min_length": 4
+          }
+        }
+      ],
+      "test_data": {
+        "user_id": "admin",
+        "password": "123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: null_user_id",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.872576",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_type",
+          "loc": [
+            "body",
+            "user_id"
+          ],
+          "msg": "Input should be a valid string",
+          "input": null
+        }
+      ],
+      "test_data": {
+        "user_id": null,
+        "password": "admin123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: null_password",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.883282",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_type",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "Input should be a valid string",
+          "input": null
+        }
+      ],
+      "test_data": {
+        "user_id": "admin",
+        "password": null
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: special_characters",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.889831",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_too_long",
+          "loc": [
+            "body",
+            "user_id"
+          ],
+          "msg": "String should have at most 20 characters",
+          "input": "admin'; DROP TABLE users; --",
+          "ctx": {
+            "max_length": 20
+          }
+        }
+      ],
+      "test_data": {
+        "user_id": "admin'; DROP TABLE users; --",
+        "password": "admin123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: very_long_user_id",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:30.898029",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "string_too_long",
+          "loc": [
+            "body",
+            "user_id"
+          ],
+          "msg": "String should have at most 20 characters",
+          "input": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+          "ctx": {
+            "max_length": 20
+          }
+        }
+      ],
+      "test_data": {
+        "user_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "password": "admin123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: very_long_password",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.100276",
+    "details": {
+      "status_code": 401,
+      "error_message": "사용자 ID 또는 비밀번호가 올바르지 않습니다.",
+      "test_data": {
+        "user_id": "admin",
+        "password": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: missing_user_id",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.106500",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "user_id"
+          ],
+          "msg": "Field required",
+          "input": {
+            "password": "admin123"
+          }
+        }
+      ],
+      "test_data": {
+        "password": "admin123"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: missing_password",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.112012",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "Field required",
+          "input": {
+            "user_id": "admin"
+          }
+        }
+      ],
+      "test_data": {
+        "user_id": "admin"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: empty_json",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.116033",
+    "details": {
+      "status_code": 422,
+      "error_message": [
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "user_id"
+          ],
+          "msg": "Field required",
+          "input": {}
+        },
+        {
+          "type": "missing",
+          "loc": [
+            "body",
+            "password"
+          ],
+          "msg": "Field required",
+          "input": {}
+        }
+      ],
+      "test_data": {}
+    },
+    "error": null
+  },
+  {
+    "test_name": "실패 케이스: extra_fields",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.317454",
+    "details": {
+      "status_code": 200,
+      "error_message": "",
+      "test_data": {
+        "user_id": "admin",
+        "password": "admin123",
+        "extra_field": "should_be_ignored"
+      }
+    },
+    "error": null
+  },
+  {
+    "test_name": "잘못된 JSON 형식",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.325838",
+    "details": {
+      "status_code": 422,
+      "response": "{\"detail\":[{\"type\":\"json_invalid\",\"loc\":[\"body\",1],\"msg\":\"JSON decode error\",\"input\":{},\"ctx\":{\"error\":\"Expecting property name enclosed in double quotes\"}}]}"
+    },
+    "error": null
+  },
+  {
+    "test_name": "잘못된 Content-Type",
+    "success": true,
+    "timestamp": "2025-09-05T23:33:31.332517",
+    "details": {
+      "status_code": 422,
+      "response": "{\"detail\":[{\"type\":\"model_attributes_type\",\"loc\":[\"body\"],\"msg\":\"Input should be a valid dictionary or object to extract fields from\",\"input\":\"user_id=admin&password=admin123\"}]}"
+    },
+    "error": null
+  }
+]

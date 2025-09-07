@@ -210,6 +210,7 @@ venv\Scripts\activate
 source venv/bin/activate
 
 # 3. 의존성 설치
+python.exe -m pip install --upgrade pip
 cd backend
 pip install -r requirements.txt
 

@@ -1,0 +1,79 @@
+[
+  {
+    "test_name": "시스템 상태 확인",
+    "endpoint": "/api/v1/system/health",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.398226",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757246860.391457}"
+  },
+  {
+    "test_name": "로그 통계 조회",
+    "endpoint": "/api/v1/system/statistics",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.402323",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "대시보드 요약 조회",
+    "endpoint": "/api/v1/system/dashboard",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 500,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.408234",
+    "response_data": null,
+    "error_message": "{\"error\":\"Internal Server Error\",\"message\":\"서버 내부 오류가 발생했습니다.\",\"timestamp\":1757246860.4056873}"
+  },
+  {
+    "test_name": "프로그램 목록 조회",
+    "endpoint": "/api/v1/system/programs",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.412340",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "프로그램 검색",
+    "endpoint": "/api/v1/system/programs/search",
+    "method": "GET",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.416315",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "프로그램 생성 (보너스)",
+    "endpoint": "/api/v1/system/programs",
+    "method": "POST",
+    "expected_status": 201,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.421610",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  },
+  {
+    "test_name": "프로그램 삭제 (정리)",
+    "endpoint": "/api/v1/system/programs/test_program_1757246860.py",
+    "method": "DELETE",
+    "expected_status": 200,
+    "actual_status": 404,
+    "success": false,
+    "timestamp": "2025-09-07T21:07:40.425941",
+    "response_data": null,
+    "error_message": "{\"detail\":\"Not Found\"}"
+  }
+]
