@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Optional, List
 from decimal import Decimal
 from pydantic import BaseModel, Field
+from fastapi import UploadFile
 
 
 # BbsMaster 스키마
@@ -148,6 +149,52 @@ class CommentResponse(CommentBase):
     last_updt_pnttm: Optional[datetime] = Field(None, description="최종수정시점")
     last_updusr_id: Optional[str] = Field(None, description="최종수정자ID")
 
+    class Config:
+        from_attributes = True
+
+
+# 파일 업로드 관련 스키마
+class BbsCreateWithFiles(BaseModel):
+    """파일 업로드와 함께 게시글 생성 스키마"""
+    bbs_id: str = Field(..., description="게시판 ID")
+    ntt_sj: str = Field(..., min_length=1, max_length=200, description="게시글 제목")
+    ntt_cn: str = Field(..., min_length=1, description="게시글 내용")
+    ntcrNm: Optional[str] = Field(None, max_length=50, description="작성자명")
+    password: Optional[str] = Field(None, max_length=100, description="비밀번호")
+    
+    class Config:
+        from_attributes = True
+
+
+class BbsUpdateWithFiles(BaseModel):
+    """파일 업로드와 함께 게시글 수정 스키마"""
+    ntt_sj: Optional[str] = Field(None, min_length=1, max_length=200, description="게시글 제목")
+    ntt_cn: Optional[str] = Field(None, min_length=1, description="게시글 내용")
+    ntcrNm: Optional[str] = Field(None, max_length=50, description="작성자명")
+    password: Optional[str] = Field(None, max_length=100, description="비밀번호")
+    delete_file_sns: Optional[List[int]] = Field(None, description="삭제할 파일 일련번호 목록")
+    
+    class Config:
+        from_attributes = True
+
+
+class FileInfo(BaseModel):
+    """첨부파일 정보 스키마"""
+    file_sn: int = Field(..., description="파일 일련번호")
+    orignl_file_nm: str = Field(..., description="원본 파일명")
+    file_size: int = Field(..., description="파일 크기")
+    file_extsn: str = Field(..., description="파일 확장자")
+    dwld_co: Optional[int] = Field(0, description="다운로드 수")
+    frst_regist_pnttm: datetime = Field(..., description="등록일시")
+    
+    class Config:
+        from_attributes = True
+
+
+class BbsResponseWithFiles(BbsResponse):
+    """첨부파일 정보를 포함한 게시글 응답 스키마"""
+    attached_files: Optional[List[FileInfo]] = Field(None, description="첨부파일 목록")
+    
     class Config:
         from_attributes = True
 

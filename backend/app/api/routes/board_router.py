@@ -4,19 +4,22 @@
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from sqlalchemy.orm import Session
 from datetime import datetime
+import json
 
 from app.database import get_db
 from app.services import BbsMasterService, BbsService, CommentService
+from app.services.file_service import FileService, FileDetailService
 from app.utils.dependencies import get_current_user
 from app.schemas.board_schemas import (
     BbsMasterResponse, BbsMasterCreate, BbsMasterUpdate,
     BbsResponse, BbsCreate, BbsUpdate,
     CommentResponse, CommentCreate, CommentUpdate,
     BbsMasterPagination, BbsPagination, CommentPagination,
-    BbsWithComments, PopularPostResponse
+    BbsWithComments, PopularPostResponse,
+    BbsCreateWithFiles, BbsUpdateWithFiles, BbsResponseWithFiles, FileInfo
 )
 
 # 게시판 마스터 라우터
@@ -41,6 +44,11 @@ comment_router = APIRouter(
 )
 
 # 서비스 인스턴스는 각 함수에서 생성
+bbs_master_service = BbsMasterService()
+bbs_service = BbsService()
+comment_service = CommentService()
+file_service = FileService()
+file_detail_service = FileDetailService()
 
 
 # ==================== 게시판 마스터 API ====================
@@ -343,14 +351,14 @@ async def get_popular_posts(
         )
 
 
-@bbs_router.get("/{ntt_id}", response_model=BbsWithComments, summary="게시글 상세 조회")
+@bbs_router.get("/{ntt_id}", response_model=BbsResponseWithFiles, summary="게시글 상세 조회")
 async def get_post(
     ntt_id: int,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
-    특정 게시글의 상세 정보를 조회합니다 (댓글 포함).
+    특정 게시글의 상세 정보를 조회합니다 (첨부파일 정보 포함).
     
     - **ntt_id**: 게시글 ID
     """
@@ -367,14 +375,26 @@ async def get_post(
         # 조회수 증가
         bbs_service.increase_view_count(db=db, ntt_id=ntt_id)
         
-        # 댓글 조회
-        comment_service = CommentService()
-        comments = comment_service.get_post_comments(db=db, ntt_id=ntt_id)
+        # 첨부파일 정보 조회
+        attached_files = []
+        if post.atch_file_id:
+            files = file_detail_service.get_files_by_group(db, post.atch_file_id)
+            attached_files = [
+                FileInfo(
+                    file_sn=f.file_sn,
+                    orignl_file_nm=f.orignl_file_nm,
+                    file_size=f.file_size,
+                    file_extsn=f.file_extsn,
+                    dwld_co=f.dwld_co or 0,
+                    frst_regist_pnttm=f.frst_regist_pnttm
+                ) for f in files
+            ]
         
-        return BbsWithComments(
-            **post.__dict__,
-            comments=comments
-        )
+        # 응답 데이터 준비
+        response_data = post.__dict__.copy()
+        response_data['attached_files'] = attached_files
+        
+        return BbsResponseWithFiles(**response_data)
         
     except HTTPException:
         raise
@@ -422,6 +442,114 @@ async def create_post(
         )
 
 
+@bbs_router.post("/with-files", response_model=BbsResponseWithFiles, summary="파일 업로드와 함께 게시글 생성")
+async def create_post_with_files(
+    bbs_id: str = Form(..., description="게시판 ID"),
+    ntt_sj: str = Form(..., description="게시글 제목"),
+    ntt_cn: str = Form(..., description="게시글 내용"),
+    ntcrNm: Optional[str] = Form(None, description="작성자명"),
+    password: Optional[str] = Form(None, description="비밀번호"),
+    files: Optional[List[UploadFile]] = File(None, description="첨부파일 목록"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    파일 업로드와 함께 새로운 게시글을 생성합니다.
+    
+    - **bbs_id**: 게시판 ID
+    - **ntt_sj**: 게시글 제목
+    - **ntt_cn**: 게시글 내용
+    - **ntcrNm**: 작성자명 (선택사항)
+    - **password**: 비밀번호 (선택사항)
+    - **files**: 첨부파일 목록 (선택사항)
+    - **current_user**: 인증된 사용자 정보
+    """
+    try:
+        # 게시판 존재 확인
+        bbs_master_service = BbsMasterService()
+        board = bbs_master_service.get_by_bbs_id(db=db, bbs_id=bbs_id)
+        if not board:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="게시판을 찾을 수 없습니다"
+            )
+        
+        # 파일 첨부 가능 여부 확인
+        if files and board.file_atch_posbl_at != 'Y':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이 게시판은 파일 첨부가 허용되지 않습니다"
+            )
+        
+        # 첨부파일 ID 생성 (파일이 있는 경우에만)
+        atch_file_id = None
+        if files and len(files) > 0:
+            # 빈 파일 제거
+            valid_files = [f for f in files if f.filename and f.size > 0]
+            if valid_files:
+                atch_file_id = file_service.create_file_group(db, current_user.get('user_id'))
+        
+        # 게시글 생성 데이터 준비
+        create_data = {
+            'bbs_id': bbs_id,
+            'ntt_sj': ntt_sj,
+            'ntt_cn': ntt_cn,
+            'ntcrNm': ntcrNm,
+            'password': password,
+            'atch_file_id': atch_file_id,
+            'frst_register_id': current_user.get('user_id')
+        }
+        
+        # 게시글 생성
+        bbs_service = BbsService()
+        new_post = bbs_service.create(db=db, obj_in=create_data)
+        
+        # 파일 업로드 처리
+        uploaded_files = []
+        if atch_file_id and files:
+            for file in files:
+                if file.filename and file.size > 0:
+                    try:
+                        # 파일 업로드
+                        file_detail = file_detail_service.upload_file(
+                            db=db,
+                            atch_file_id=atch_file_id,
+                            file_data=file.file,
+                            original_filename=file.filename,
+                            user_id=current_user.get('user_id')
+                        )
+                        uploaded_files.append(file_detail)
+                    except Exception as e:
+                        # 파일 업로드 실패 시에도 게시글은 생성되도록 함
+                        continue
+        
+        # 응답 데이터 준비
+        response_data = new_post.__dict__.copy()
+        if uploaded_files:
+            response_data['attached_files'] = [
+                FileInfo(
+                    file_sn=f.file_sn,
+                    orignl_file_nm=f.orignl_file_nm,
+                    file_size=f.file_size,
+                    file_extsn=f.file_extsn,
+                    dwld_co=f.dwld_co or 0,
+                    frst_regist_pnttm=f.frst_regist_pnttm
+                ) for f in uploaded_files
+            ]
+        else:
+            response_data['attached_files'] = []
+        
+        return BbsResponseWithFiles(**response_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="파일 업로드 게시글 생성 중 오류가 발생했습니다"
+        )
+
+
 @bbs_router.put("/{ntt_id}", response_model=BbsResponse, summary="게시글 수정")
 async def update_post(
     ntt_id: int,
@@ -457,6 +585,172 @@ async def update_post(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"게시글 수정 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
+@bbs_router.put("/{ntt_id}/with-files", response_model=BbsResponseWithFiles, summary="파일 업로드와 함께 게시글 수정")
+async def update_post_with_files(
+    ntt_id: int,
+    ntt_sj: Optional[str] = Form(None, description="게시글 제목"),
+    ntt_cn: Optional[str] = Form(None, description="게시글 내용"),
+    ntcrNm: Optional[str] = Form(None, description="작성자명"),
+    password: Optional[str] = Form(None, description="비밀번호"),
+    files: Optional[List[UploadFile]] = File(None, description="새로 추가할 첨부파일 목록"),
+    delete_file_sns: Optional[str] = Form(None, description="삭제할 파일 일련번호 목록 (쉼표로 구분)"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    파일 업로드/삭제와 함께 게시글을 수정합니다.
+    
+    - **ntt_id**: 수정할 게시글 ID
+    - **ntt_sj**: 게시글 제목 (선택사항)
+    - **ntt_cn**: 게시글 내용 (선택사항)
+    - **ntcrNm**: 작성자명 (선택사항)
+    - **password**: 비밀번호 (선택사항)
+    - **files**: 새로 추가할 첨부파일 목록 (선택사항)
+    - **delete_file_sns**: 삭제할 파일 일련번호 목록 (선택사항)
+    - **current_user**: 인증된 사용자 정보
+    """
+    try:
+        # 게시글 존재 확인
+        bbs_service = BbsService()
+        existing_post = bbs_service.get_by_ntt_id(db=db, ntt_id=ntt_id)
+        if not existing_post:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="게시글을 찾을 수 없습니다"
+            )
+        
+        # 게시판 정보 확인 (파일 첨부 가능 여부)
+        bbs_master_service = BbsMasterService()
+        board = bbs_master_service.get_by_bbs_id(db=db, bbs_id=existing_post.bbs_id)
+        if files and board.file_atch_posbl_at != 'Y':
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="이 게시판은 파일 첨부가 허용되지 않습니다"
+            )
+        
+        # 기존 첨부파일 ID 가져오기
+        atch_file_id = existing_post.atch_file_id
+        
+        # 파일 삭제 처리
+        if delete_file_sns:
+            file_sns_to_delete = [int(sn.strip()) for sn in delete_file_sns.split(',') if sn.strip().isdigit()]
+            for file_sn in file_sns_to_delete:
+                try:
+                    file_detail_service.delete_file(db, file_sn, current_user.get('user_id'))
+                except Exception as e:
+                    continue
+        
+        # 새 파일 업로드 처리
+        uploaded_files = []
+        if files and len(files) > 0:
+            # 빈 파일 제거
+            valid_files = [f for f in files if f.filename and f.size > 0]
+            if valid_files:
+                # 첨부파일 ID가 없으면 새로 생성
+                if not atch_file_id:
+                    atch_file_id = file_service.create_file_group(db, current_user.get('user_id'))
+                
+                # 파일 업로드
+                for file in valid_files:
+                    try:
+                        file_detail = file_detail_service.upload_file(
+                            db=db,
+                            atch_file_id=atch_file_id,
+                            file_data=file.file,
+                            original_filename=file.filename,
+                            user_id=current_user.get('user_id')
+                        )
+                        uploaded_files.append(file_detail)
+                    except Exception as e:
+                        continue
+        
+        # 게시글 수정 데이터 준비
+        update_data = {}
+        if ntt_sj is not None:
+            update_data['ntt_sj'] = ntt_sj
+        if ntt_cn is not None:
+            update_data['ntt_cn'] = ntt_cn
+        if ntcrNm is not None:
+            update_data['ntcrNm'] = ntcrNm
+        if password is not None:
+            update_data['password'] = password
+        if atch_file_id:
+            update_data['atch_file_id'] = atch_file_id
+        
+        update_data['last_updusr_id'] = current_user.get('user_id')
+        
+        # 게시글 수정
+        updated_post = bbs_service.update(db=db, db_obj=existing_post, obj_in=update_data)
+        
+        # 현재 첨부파일 목록 조회
+        current_files = []
+        if updated_post.atch_file_id:
+            current_files = file_detail_service.get_files_by_group(db, updated_post.atch_file_id)
+        
+        # 응답 데이터 준비
+        response_data = updated_post.__dict__.copy()
+        response_data['attached_files'] = [
+            FileInfo(
+                file_sn=f.file_sn,
+                orignl_file_nm=f.orignl_file_nm,
+                file_size=f.file_size,
+                file_extsn=f.file_extsn,
+                dwld_co=f.dwld_co or 0,
+                frst_regist_pnttm=f.frst_regist_pnttm
+            ) for f in current_files
+        ]
+        
+        return BbsResponseWithFiles(**response_data)
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="파일 업로드 게시글 수정 중 오류가 발생했습니다"
+        )
+
+
+@bbs_router.get("/files/{file_sn}/download", summary="첨부파일 다운로드")
+async def download_file(
+    file_sn: int,
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    첨부파일을 다운로드합니다.
+    
+    - **file_sn**: 다운로드할 파일 일련번호
+    """
+    try:
+        # 파일 정보 조회
+        file_info = file_detail_service.get_by_file_sn(db, file_sn)
+        if not file_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="파일을 찾을 수 없습니다"
+            )
+        
+        # 파일 다운로드 처리
+        file_response = file_detail_service.download_file(db, file_sn, current_user.get('user_id'))
+        
+        if not file_response:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="파일을 찾을 수 없습니다"
+            )
+        
+        return file_response
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="파일 다운로드 중 오류가 발생했습니다"
         )
 
 

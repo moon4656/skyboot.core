@@ -1,0 +1,105 @@
+# SkyBoot Core API - Development Docker Compose
+# 개발 환경용 Docker Compose 설정
+
+version: '3.8'
+
+services:
+  # PostgreSQL 데이터베이스 (개발용)
+  db-dev:
+    image: postgres:15-alpine
+    container_name: skyboot-db-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: skybootcore_dev
+      POSTGRES_USER: skyboot_dev
+      POSTGRES_PASSWORD: dev_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --locale=C"
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+      - ./backend/migrations:/docker-entrypoint-initdb.d
+    ports:
+      - "5433:5432"
+    networks:
+      - skyboot-dev-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U skyboot_dev -d skybootcore_dev"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis 캐시 서버 (개발용)
+  redis-dev:
+    image: redis:7-alpine
+    container_name: skyboot-redis-dev
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6380:6379"
+    networks:
+      - skyboot-dev-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # SkyBoot Core API 애플리케이션 (개발용)
+  api-dev:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: skyboot-api-dev
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://skyboot_dev:dev_password@db-dev:5432/skybootcore_dev?client_encoding=utf8
+      - REDIS_URL=redis://redis-dev:6379/0
+      - ENVIRONMENT=development
+      - DEBUG=true
+    env_file:
+      - ./backend/.env.example
+    volumes:
+      - ./backend:/app
+      - ./backend/logs:/app/logs
+      - ./backend/uploads:/app/uploads
+    ports:
+      - "8001:8000"
+    networks:
+      - skyboot-dev-network
+    depends_on:
+      db-dev:
+        condition: service_healthy
+      redis-dev:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # 개발용 Adminer (데이터베이스 관리 도구)
+  adminer:
+    image: adminer:latest
+    container_name: skyboot-adminer-dev
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    networks:
+      - skyboot-dev-network
+    depends_on:
+      - db-dev
+
+networks:
+  skyboot-dev-network:
+    driver: bridge
+    name: skyboot-dev-network
+
+volumes:
+  postgres_dev_data:
+    driver: local
+    name: skyboot-postgres-dev
+  redis_dev_data:
+    driver: local
+    name: skyboot-redis-dev
