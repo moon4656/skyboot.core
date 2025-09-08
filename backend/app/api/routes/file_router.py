@@ -4,20 +4,22 @@
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File, Form
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 import os
+import logging
+from datetime import datetime
 from pathlib import Path
 
 from app.database import get_db
 from app.services import FileService, FileDetailService
 from app.utils.dependencies import get_current_user
 from app.schemas.file_schemas import (
-    FileResponse as FileResponseSchema, FileCreate, FileUpdate,
+    FileResponse as FileResponseSchema, FileCreate, FileUpdate, FileGroupCreate,
     FileDetailResponse, FileDetailCreate, FileDetailUpdate,
     FilePagination, FileDetailPagination,
-    FileWithDetails, FileUploadResponse, FileDownloadResponse,
+    FileWithDetails, FileUploadResponse, FileUploadProcessResponse, FileDownloadResponse,
     FileSearchParams, FileStatistics, FileValidationResponse
 )
 
@@ -38,6 +40,9 @@ file_detail_router = APIRouter(
 # 서비스 인스턴스
 file_service = FileService()
 file_detail_service = FileDetailService()
+
+# 로거 설정
+logger = logging.getLogger(__name__)
 
 # 파일 업로드 설정
 UPLOAD_DIR = Path("uploads")
@@ -145,29 +150,24 @@ async def get_file_group(
 
 @file_router.post("/", response_model=FileResponseSchema, summary="파일 그룹 생성")
 async def create_file_group(
-    file_data: FileCreate,
+    file_data: FileGroupCreate,
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
     """
     새로운 파일 그룹을 생성합니다.
     
-    - **atch_file_id**: 첨부파일 ID (고유값)
+    - **use_at**: 사용 여부 (Y/N)
     """
     try:
-        # 중복 확인
-        existing_file = file_service.get_by_atch_file_id(db=db, atch_file_id=file_data.atch_file_id)
-        if existing_file:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"이미 존재하는 첨부파일 ID입니다: {file_data.atch_file_id}"
-            )
-        
-        file_group = file_service.create_file_group(db=db, file_data=file_data)
+        # 파일 그룹 생성 (서비스에서 자동으로 UUID 생성)
+        file_group = file_service.create_file_group(
+            db=db, 
+            file_group_data=file_data.model_dump(),
+            user_id=current_user.get('user_id', 'system')
+        )
         return file_group
         
-    except HTTPException:
-        raise
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -175,41 +175,41 @@ async def create_file_group(
         )
 
 
-@file_router.put("/{atch_file_id}", response_model=FileResponseSchema, summary="파일 그룹 수정")
-async def update_file_group(
-    atch_file_id: str,
-    file_data: FileUpdate,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    파일 그룹 정보를 수정합니다.
+# @file_router.put("/{atch_file_id}", response_model=FileResponseSchema, summary="파일 그룹 수정")
+# async def update_file_group(
+#     atch_file_id: str,
+#     file_data: FileUpdate,
+#     current_user: dict = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     """
+#     파일 그룹 정보를 수정합니다.
     
-    - **atch_file_id**: 수정할 첨부파일 ID
-    """
-    try:
-        file_group = file_service.get_by_atch_file_id(db=db, atch_file_id=atch_file_id)
-        if not file_group:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"파일 그룹을 찾을 수 없습니다: {atch_file_id}"
-            )
+#     - **atch_file_id**: 수정할 첨부파일 ID
+#     """
+#     try:
+#         file_group = file_service.get_by_atch_file_id(db=db, atch_file_id=atch_file_id)
+#         if not file_group:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail=f"파일 그룹을 찾을 수 없습니다: {atch_file_id}"
+#             )
         
-        updated_file_group = file_service.update(
-            db=db,
-            db_obj=file_group,
-            obj_in=file_data
-        )
+#         updated_file_group = file_service.update(
+#             db=db,
+#             db_obj=file_group,
+#             obj_in=file_data
+#         )
         
-        return updated_file_group
+#         return updated_file_group
         
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"파일 그룹 수정 중 오류가 발생했습니다: {str(e)}"
-        )
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"파일 그룹 수정 중 오류가 발생했습니다: {str(e)}"
+#         )
 
 
 @file_router.delete("/{atch_file_id}", summary="파일 그룹 삭제")
@@ -231,7 +231,14 @@ async def delete_file_group(
                 detail=f"파일 그룹을 찾을 수 없습니다: {atch_file_id}"
             )
         
-        file_service.soft_delete(db=db, db_obj=file_group)
+        # File 모델은 atch_file_id가 기본키이므로 직접 use 필드를 'N'으로 변경
+        file_group.use = 'N'
+        file_group.last_updusr_id = current_user.get('user_id', 'system')
+        file_group.last_updt_pnttm = datetime.now()
+        
+        db.add(file_group)
+        db.commit()
+        db.refresh(file_group)
         
         return {"message": f"파일 그룹이 삭제되었습니다: {atch_file_id}"}
         
@@ -243,6 +250,77 @@ async def delete_file_group(
             detail=f"파일 그룹 삭제 중 오류가 발생했습니다: {str(e)}"
         )
 
+@file_router.post("/upload-process", response_model=FileUploadProcessResponse, summary="파일 업로드 프로세스 통합")
+async def upload_file_process(
+    files: List[UploadFile] = File(..., description="업로드할 파일 목록"),
+    use_at: str = Form("Y", description="사용여부"),
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    파일 업로드 프로세스를 통합하여 처리합니다.
+    
+    프로세스:
+    1. 파일 그룹 생성 (atch_file_id 자동 생성)
+    2. 파일 업로드 및 저장
+    3. 파일 속성 생성
+    4. 파일 상세정보 생성
+    
+    - **files**: 업로드할 파일 목록
+    - **use_at**: 사용여부 (Y/N)
+    """
+    try:
+        # 1. 파일 그룹 생성
+        file_group_data = {"use_at": use_at}
+        file_group = file_service.create_file_group(
+            db=db,
+            file_group_data=file_group_data,
+            user_id=current_user['user_id']
+        )
+        
+        atch_file_id = file_group.atch_file_id
+        uploaded_files = []
+        failed_files = []
+        total_size = 0
+        
+        # 2-4. 각 파일에 대해 업로드 및 상세정보 생성
+        for file in files:
+            try:
+                # 파일 업로드 및 상세정보 생성
+                file_detail = file_detail_service.upload_file(
+                    db=db,
+                    atch_file_id=atch_file_id,
+                    file_data=file.file,
+                    original_filename=file.filename,
+                    user_id='system'
+                )
+                uploaded_files.append(file_detail)
+                total_size += file_detail.file_size or 0
+                
+            except Exception as e:
+                logger.error(f"❌ 파일 업로드 실패 - 파일명: {file.filename}, 오류: {str(e)}")
+                failed_files.append({
+                    "filename": file.filename,
+                    "error": str(e)
+                })
+        
+        # API 사용 로그
+        logger.info(f"✅ 파일 업로드 프로세스 완료 - 첨부파일ID: {atch_file_id}, 성공: {len(uploaded_files)}개, 실패: {len(failed_files)}개")
+        
+        return FileUploadProcessResponse(
+            atch_file_id=atch_file_id,
+            uploaded_files=uploaded_files,
+            success_count=len(uploaded_files),
+            failed_count=len(failed_files),
+            total_size=total_size
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ 파일 업로드 프로세스 실패 - 오류: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"파일 업로드 프로세스 중 오류가 발생했습니다: {str(e)}"
+        )
 
 # ==================== 파일 상세 API ====================
 
@@ -269,9 +347,7 @@ async def get_file_details(
         if atch_file_id:
             file_details = file_detail_service.get_files_by_group(
                 db=db,
-                atch_file_id=atch_file_id,
-                skip=skip,
-                limit=limit
+                atch_file_id=atch_file_id
             )
         else:
             search_params = FileSearchParams(
@@ -321,35 +397,35 @@ async def get_file_statistics_by_type(
         )
 
 
-@file_detail_router.get("/{file_sn}", response_model=FileDetailResponse, summary="파일 상세 조회")
-async def get_file_detail(
-    file_sn: int,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    특정 파일의 상세 정보를 조회합니다.
+# @file_detail_router.get("/{file_sn}", response_model=FileDetailResponse, summary="파일 상세 조회")
+# async def get_file_detail(
+#     file_sn: int,
+#     current_user: dict = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     """
+#     특정 파일의 상세 정보를 조회합니다.
     
-    - **file_sn**: 파일 일련번호
-    """
-    try:
-        file_detail = file_detail_service.get_by_file_sn(db=db, file_sn=file_sn)
+#     - **file_sn**: 파일 일련번호
+#     """
+#     try:
+#         file_detail = file_detail_service.get_by_file_sn(db=db, file_sn=file_sn)
         
-        if not file_detail:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"파일을 찾을 수 없습니다: {file_sn}"
-            )
+#         if not file_detail:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail=f"파일을 찾을 수 없습니다: {file_sn}"
+#             )
         
-        return file_detail
+#         return file_detail
         
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"파일 조회 중 오류가 발생했습니다: {str(e)}"
-        )
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"파일 조회 중 오류가 발생했습니다: {str(e)}"
+#         )
 
 
 @file_detail_router.post("/upload", response_model=FileUploadResponse, summary="파일 업로드")
@@ -387,18 +463,20 @@ async def upload_file(
             )
         
         # 파일 업로드
-        uploaded_file = await file_detail_service.upload_file(
+        uploaded_file = file_detail_service.upload_file(
             db=db,
             atch_file_id=atch_file_id,
-            file=file,
-            upload_dir=UPLOAD_DIR
+            file_data=file.file,
+            original_filename=file.filename,
+            user_id=current_user.get('user_id', 'system')
         )
         
         return FileUploadResponse(
-            file_sn=uploaded_file.file_sn,
-            orignl_file_nm=uploaded_file.orignl_file_nm,
-            file_size=uploaded_file.file_size,
-            file_path=uploaded_file.file_path,
+            success=True,
+            file_id=str(uploaded_file.file_sn),
+            file_name=uploaded_file.orignl_file_nm,
+            file_size=int(uploaded_file.file_size) if uploaded_file.file_size else 0,
+            upload_url=f"/api/v1/file-details/{uploaded_file.file_sn}/download",
             message="파일이 성공적으로 업로드되었습니다"
         )
         
@@ -414,6 +492,7 @@ async def upload_file(
 @file_detail_router.get("/{file_sn}/download", response_class=FileResponse, summary="파일 다운로드")
 async def download_file(
     file_sn: int,
+    atch_file_id: str = Query(..., description="첨부파일 ID"),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -423,7 +502,7 @@ async def download_file(
     - **file_sn**: 파일 일련번호
     """
     try:
-        file_detail = file_detail_service.get_by_file_sn(db=db, file_sn=file_sn)
+        file_detail = file_detail_service.get_by_file_sn(db=db, atch_file_id=atch_file_id, file_sn=file_sn)
         
         if not file_detail:
             raise HTTPException(
@@ -431,7 +510,7 @@ async def download_file(
                 detail=f"파일을 찾을 수 없습니다: {file_sn}"
             )
         
-        file_path = Path(file_detail.file_path)
+        file_path = Path(file_detail.file_stre_cours)
         if not file_path.exists():
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -456,46 +535,48 @@ async def download_file(
         )
 
 
-@file_detail_router.put("/{file_sn}", response_model=FileDetailResponse, summary="파일 정보 수정")
-async def update_file_detail(
-    file_sn: int,
-    file_data: FileDetailUpdate,
-    current_user: dict = Depends(get_current_user),
-    db: Session = Depends(get_db)
-):
-    """
-    파일 정보를 수정합니다.
+# @file_detail_router.put("/{file_sn}", response_model=FileDetailResponse, summary="파일 정보 수정")
+# async def update_file_detail(
+#     file_sn: int,
+#     file_data: FileDetailUpdate,
+#     atch_file_id: str = Query(..., description="첨부파일 ID"),
+#     current_user: dict = Depends(get_current_user),
+#     db: Session = Depends(get_db)
+# ):
+#     """
+#     파일 정보를 수정합니다.
     
-    - **file_sn**: 수정할 파일 일련번호
-    """
-    try:
-        file_detail = file_detail_service.get_by_file_sn(db=db, file_sn=file_sn)
-        if not file_detail:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"파일을 찾을 수 없습니다: {file_sn}"
-            )
+#     - **file_sn**: 수정할 파일 일련번호
+#     """
+#     try:
+#         file_detail = file_detail_service.get_by_file_sn(db=db, atch_file_id=atch_file_id, file_sn=file_sn)
+#         if not file_detail:
+#             raise HTTPException(
+#                 status_code=status.HTTP_404_NOT_FOUND,
+#                 detail=f"파일을 찾을 수 없습니다: {file_sn}"
+#             )
         
-        updated_file_detail = file_detail_service.update(
-            db=db,
-            db_obj=file_detail,
-            obj_in=file_data
-        )
+#         updated_file_detail = file_detail_service.update(
+#             db=db,
+#             db_obj=file_detail,
+#             obj_in=file_data
+#         )
         
-        return updated_file_detail
+#         return updated_file_detail
         
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"파일 정보 수정 중 오류가 발생했습니다: {str(e)}"
-        )
+#     except HTTPException:
+#         raise
+#     except Exception as e:
+#         raise HTTPException(
+#             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+#             detail=f"파일 정보 수정 중 오류가 발생했습니다: {str(e)}"
+#         )
 
 
 @file_detail_router.delete("/{file_sn}", summary="파일 삭제")
 async def delete_file_detail(
     file_sn: int,
+    atch_file_id: str = Query(..., description="첨부파일 ID"),
     delete_physical: bool = Query(False, description="물리적 파일도 삭제할지 여부"),
     current_user: dict = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -507,7 +588,7 @@ async def delete_file_detail(
     - **delete_physical**: 물리적 파일도 삭제할지 여부
     """
     try:
-        file_detail = file_detail_service.get_by_file_sn(db=db, file_sn=file_sn)
+        file_detail = file_detail_service.get_by_file_sn(db=db, atch_file_id=atch_file_id, file_sn=file_sn)
         if not file_detail:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,

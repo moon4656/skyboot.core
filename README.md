@@ -226,6 +226,7 @@ createdb skyboot_db
 alembic upgrade head
 
 # 6. 서버 실행
+cd backend
 python main.py
 ```
 

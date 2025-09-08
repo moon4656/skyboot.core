@@ -4,7 +4,7 @@
 """
 
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from decimal import Decimal
 from pydantic import BaseModel, Field
 
@@ -22,8 +22,13 @@ class FileBase(BaseModel):
 
 class FileCreate(FileBase):
     """파일 생성 스키마"""
-    atch_file_id: str = Field(..., max_length=20, description="첨부파일ID")
+    atch_file_id: str = Field(..., max_length=36, description="첨부파일ID")
     frst_register_id: str = Field(..., max_length=20, description="최초등록자ID")
+
+
+class FileGroupCreate(BaseModel):
+    """파일 그룹 생성 스키마 (atch_file_id 자동 생성)"""
+    use_at: Optional[str] = Field("Y", max_length=1, description="사용여부")
 
 
 class FileUpdate(BaseModel):
@@ -62,7 +67,7 @@ class FileDetailBase(BaseModel):
 
 class FileDetailCreate(FileDetailBase):
     """파일상세 생성 스키마"""
-    atch_file_id: str = Field(..., max_length=20, description="첨부파일ID")
+    atch_file_id: str = Field(..., max_length=36, description="첨부파일ID")
     file_sn: Decimal = Field(..., description="파일순번")
     frst_register_id: str = Field(..., max_length=20, description="최초등록자ID")
 
@@ -121,9 +126,9 @@ class FileDetailListResponse(BaseModel):
     pages: int = Field(..., description="전체 페이지 수")
 
 
-# 파일 업로드 스키마
-class FileUploadResponse(BaseModel):
-    """파일 업로드 응답 스키마"""
+# 파일 업로드 프로세스 응답 스키마
+class FileUploadProcessResponse(BaseModel):
+    """파일 업로드 프로세스 응답 스키마"""
     atch_file_id: str = Field(..., description="첨부파일ID")
     uploaded_files: List[FileDetailResponse] = Field(..., description="업로드된 파일 목록")
     success_count: int = Field(..., description="성공한 파일 수")

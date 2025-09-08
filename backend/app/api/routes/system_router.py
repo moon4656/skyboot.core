@@ -453,7 +453,7 @@ async def get_dashboard_summary(
     - 성능 지표
     """
     monitoring_service = SystemMonitoringService()
-    return monitoring_service.syslog_service.get_dashboard_summary(db)
+    return monitoring_service.get_dashboard_summary(db)
 
 
 @router.get("/logs/user/{user_id}", response_model=SysLogPagination, summary="사용자별 로그 조회")

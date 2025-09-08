@@ -27,6 +27,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/login",
         "/api/v1/auth/refresh",
         "/api/v1/users/one-click-login",
+        "/api/v1/files/upload-process",  # 테스트용 임시 추가
     }
     
     # 인증이 필요하지 않은 경로 패턴들

@@ -7,6 +7,7 @@ from typing import List, Optional, Dict, Any, BinaryIO
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, or_, desc, asc, func
 from datetime import datetime
+from decimal import Decimal
 import logging
 import os
 import uuid
@@ -16,7 +17,8 @@ from pathlib import Path
 from app.models.file_models import File, FileDetail
 from app.schemas.file_schemas import (
     FileCreate, FileUpdate,
-    FileDetailCreate, FileDetailUpdate
+    FileDetailCreate, FileDetailUpdate,
+    FileValidationResponse, FileValidationResult
 )
 from .base_service import BaseService
 
@@ -48,7 +50,7 @@ class FileService(BaseService[File, FileCreate, FileUpdate]):
             return db.query(File).filter(
                 and_(
                     File.atch_file_id == atch_file_id,
-                    File.delete_at == 'N'
+                    File.use == 'Y'
                 )
             ).first()
         except Exception as e:
@@ -102,36 +104,66 @@ class FileService(BaseService[File, FileCreate, FileUpdate]):
             파일 통계 정보
         """
         try:
-            # 전체 파일 그룹 수
-            total_groups = db.query(File).filter(File.delete_at == 'N').count()
-            
-            # 활성 파일 그룹 수
-            active_groups = db.query(File).filter(
-                and_(
-                    File.use_at == 'Y',
-                    File.delete_at == 'N'
-                )
-            ).count()
+            from decimal import Decimal
+            from datetime import datetime, timedelta
             
             # 전체 파일 수 (FileDetail 기준)
             total_files = db.query(FileDetail).filter(
-                FileDetail.delete_at == 'N'
+                FileDetail.file_delete_yn == 'N'
             ).count()
             
             # 전체 파일 크기
             total_size = db.query(
                 func.sum(FileDetail.file_size)
             ).filter(
-                FileDetail.delete_at == 'N'
+                FileDetail.file_delete_yn == 'N'
             ).scalar() or 0
             
+            # 평균 파일 크기
+            avg_file_size = Decimal(total_size) / Decimal(total_files) if total_files > 0 else Decimal(0)
+            
+            # 파일 타입별 통계
+            file_types = {}
+            type_stats = db.query(
+                FileDetail.file_extsn,
+                func.count(FileDetail.file_sn).label('count'),
+                func.sum(FileDetail.file_size).label('total_size')
+            ).filter(
+                FileDetail.file_delete_yn == 'N'
+            ).group_by(FileDetail.file_extsn).all()
+            
+            for ext, count, size in type_stats:
+                file_types[ext or 'unknown'] = {
+                    'count': count,
+                    'total_size': size or 0
+                }
+            
+            # 업로드 추세 (최근 7일)
+            upload_trend = []
+            for i in range(7):
+                date = datetime.now() - timedelta(days=i)
+                start_date = date.replace(hour=0, minute=0, second=0, microsecond=0)
+                end_date = start_date + timedelta(days=1)
+                
+                daily_count = db.query(FileDetail).filter(
+                    and_(
+                        FileDetail.file_delete_yn == 'N',
+                        FileDetail.frst_regist_pnttm >= start_date,
+                        FileDetail.frst_regist_pnttm < end_date
+                    )
+                ).count()
+                
+                upload_trend.append({
+                    'date': start_date.strftime('%Y-%m-%d'),
+                    'count': daily_count
+                })
+            
             return {
-                'total_groups': total_groups,
-                'active_groups': active_groups,
-                'inactive_groups': total_groups - active_groups,
                 'total_files': total_files,
-                'total_size_bytes': total_size,
-                'total_size_mb': round(total_size / (1024 * 1024), 2)
+                'total_size': Decimal(total_size),
+                'avg_file_size': avg_file_size,
+                'file_types': file_types,
+                'upload_trend': upload_trend
             }
             
         except Exception as e:
@@ -162,7 +194,7 @@ class FileService(BaseService[File, FileCreate, FileUpdate]):
             검색된 파일 그룹 목록
         """
         try:
-            query = db.query(File).filter(File.delete_at == 'N')
+            query = db.query(File).filter(File.use == 'Y')
             
             # 날짜 범위 조건
             if start_date:
@@ -203,7 +235,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
         }
         self.max_file_size = 100 * 1024 * 1024  # 100MB
     
-    def get_by_file_sn(self, db: Session, file_sn: int) -> Optional[FileDetail]:
+    def get_by_file_sn(self, db: Session, atch_file_id: int, file_sn: int ) -> Optional[FileDetail]:
         """
         파일 일련번호로 파일 상세 정보 조회
         
@@ -217,8 +249,9 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
         try:
             return db.query(FileDetail).filter(
                 and_(
+                    FileDetail.atch_file_id == atch_file_id,
                     FileDetail.file_sn == file_sn,
-                    FileDetail.delete_at == 'N'
+                    FileDetail.file_delete_yn == 'N'
                 )
             ).first()
         except Exception as e:
@@ -244,7 +277,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             return db.query(FileDetail).filter(
                 and_(
                     FileDetail.atch_file_id == atch_file_id,
-                    FileDetail.delete_at == 'N'
+                    FileDetail.file_delete_yn == 'N'
                 )
             ).order_by(FileDetail.file_sn).all()
         except Exception as e:
@@ -286,12 +319,21 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             if file_size > self.max_file_size:
                 raise ValueError(f"파일 크기가 너무 큽니다. 최대 {self.max_file_size // (1024*1024)}MB")
             
-            # 저장할 파일명 생성
-            stored_filename = f"{uuid.uuid4()}{file_ext}"
-            file_path = os.path.join(self.upload_path, stored_filename)
+            # 현재 날짜와 시간 생성
+            now = datetime.now()
+            date_str = now.strftime('%Y%m%d')
+            time_str = now.strftime('%H%M%S')
+            short_uuid = str(uuid.uuid4())[:8]
+            
+            # 저장할 파일명 생성: {일자}-{시간}-{short uuid} + 확장자
+            stored_filename = f"{date_str}-{time_str}-{short_uuid}{file_ext}"
+            
+            # 날짜별 디렉토리 구조 생성: uploads/{일자}/
+            date_dir = os.path.join(self.upload_path, date_str)
+            file_path = os.path.join(date_dir, stored_filename)
             
             # 디렉토리 생성
-            os.makedirs(self.upload_path, exist_ok=True)
+            os.makedirs(date_dir, exist_ok=True)
             
             # 파일 저장
             with open(file_path, 'wb') as f:
@@ -371,7 +413,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             logger.error(f"❌ 파일 다운로드 정보 조회 실패 - file_sn: {file_sn}, 오류: {str(e)}")
             raise
     
-    def delete_file(self, db: Session, file_sn: int, user_id: str = 'system') -> bool:
+    def delete_file(self, db: Session, file_sn: int, user_id: str = 'system', delete_physical: bool = True) -> bool:
         """
         파일 삭제 (물리적 파일도 함께 삭제)
         
@@ -379,6 +421,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             db: 데이터베이스 세션
             file_sn: 파일 일련번호
             user_id: 삭제 사용자 ID
+            delete_physical: 물리적 파일도 삭제할지 여부
             
         Returns:
             삭제 성공 여부
@@ -388,8 +431,8 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             if not file_detail:
                 return False
             
-            # 물리적 파일 삭제
-            if os.path.exists(file_detail.file_stre_cours):
+            # 물리적 파일 삭제 (delete_physical이 True인 경우에만)
+            if delete_physical and os.path.exists(file_detail.file_stre_cours):
                 try:
                     os.remove(file_detail.file_stre_cours)
                     logger.info(f"✅ 물리적 파일 삭제 완료 - 경로: {file_detail.file_stre_cours}")
@@ -397,7 +440,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
                     logger.warning(f"⚠️ 물리적 파일 삭제 실패 - 경로: {file_detail.file_stre_cours}, 오류: {str(e)}")
             
             # 논리적 삭제
-            file_detail.delete_at = 'Y'
+            file_detail.file_delete_yn = 'Y'
             file_detail.last_updusr_id = user_id
             file_detail.last_updt_pnttm = datetime.now()
             
@@ -411,6 +454,44 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             db.rollback()
             logger.error(f"❌ 파일 삭제 실패 - file_sn: {file_sn}, 오류: {str(e)}")
             raise
+    
+    def record_download(self, db: Session, file_sn: int) -> bool:
+        """
+        파일 다운로드 기록
+        
+        Args:
+            db: 데이터베이스 세션
+            file_sn: 파일 일련번호
+            
+        Returns:
+            기록 성공 여부
+        """
+        try:
+            file_detail = db.query(FileDetail).filter(
+                and_(
+                    FileDetail.file_sn == file_sn,
+                    FileDetail.file_delete_yn == 'N'
+                )
+            ).first()
+            
+            if not file_detail:
+                logger.warning(f"⚠️ 다운로드 기록 실패 - 파일을 찾을 수 없음: {file_sn}")
+                return False
+            
+            # 다운로드 수 증가
+            file_detail.dwld_co = (file_detail.dwld_co or 0) + 1
+            file_detail.last_updt_pnttm = datetime.now()
+            
+            db.add(file_detail)
+            db.commit()
+            
+            logger.info(f"✅ 다운로드 기록 완료 - file_sn: {file_sn}, 다운로드 수: {file_detail.dwld_co}")
+            return True
+            
+        except Exception as e:
+            logger.error(f"❌ 다운로드 기록 실패 - file_sn: {file_sn}, 오류: {str(e)}")
+            db.rollback()
+            return False
     
     def search_files(
         self, 
@@ -440,7 +521,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             검색된 파일 목록
         """
         try:
-            query = db.query(FileDetail).filter(FileDetail.delete_at == 'N')
+            query = db.query(FileDetail).filter(FileDetail.file_delete_yn == 'N')
             
             # 첨부파일 ID 조건
             if atch_file_id:
@@ -491,7 +572,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
                 
                 count = db.query(FileDetail).filter(
                     and_(
-                        FileDetail.delete_at == 'N',
+                        FileDetail.file_delete_yn == 'N',
                         ext_filter
                     )
                 ).count()
@@ -500,7 +581,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
                     func.sum(FileDetail.file_size)
                 ).filter(
                     and_(
-                        FileDetail.delete_at == 'N',
+                        FileDetail.file_delete_yn == 'N',
                         ext_filter
                     )
                 ).scalar() or 0
@@ -549,7 +630,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             # DB에 등록된 파일명 목록 조회
             db_files = set(
                 db.query(FileDetail.stre_file_nm).filter(
-                    FileDetail.delete_at == 'N'
+                    FileDetail.file_delete_yn == 'N'
                 ).all()
             )
             db_filenames = {item[0] for item in db_files}
@@ -585,3 +666,65 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
         except Exception as e:
             logger.error(f"❌ 고아 파일 정리 실패 - 오류: {str(e)}")
             raise
+    
+    def validate_file(self, filename: str, file_size: int) -> FileValidationResponse:
+        """
+        파일을 검증합니다.
+        
+        Args:
+            filename: 파일명
+            file_size: 파일 크기 (바이트)
+            
+        Returns:
+            파일 검증 결과
+        """
+        try:
+            errors = []
+            warnings = []
+            is_valid = True
+            
+            # 파일 확장자 검증
+            file_ext = Path(filename).suffix.lower()
+            if not self._is_allowed_extension(file_ext):
+                errors.append(f"허용되지 않는 파일 확장자입니다: {file_ext}")
+                is_valid = False
+            
+            # 파일 크기 검증
+            if file_size > self.max_file_size:
+                errors.append(f"파일 크기가 너무 큽니다. 최대 {self.max_file_size // (1024*1024)}MB")
+                is_valid = False
+            
+            # 파일명 검증
+            if not filename or len(filename.strip()) == 0:
+                errors.append("파일명이 비어있습니다")
+                is_valid = False
+            elif len(filename) > 255:
+                errors.append("파일명이 너무 깁니다 (최대 255자)")
+                is_valid = False
+            
+            # 파일 타입 결정
+            file_type = "기타"
+            for type_name, extensions in self.allowed_extensions.items():
+                if file_ext in extensions:
+                    file_type = type_name
+                    break
+            
+            return FileValidationResult(
+                is_valid=is_valid,
+                file_name=filename,
+                file_size=Decimal(str(file_size)),
+                file_type=file_type,
+                errors=errors,
+                warnings=warnings
+            )
+            
+        except Exception as e:
+            logger.error(f"❌ 파일 검증 실패 - 파일명: {filename}, 오류: {str(e)}")
+            return FileValidationResult(
+                is_valid=False,
+                file_name=filename,
+                file_size=Decimal(str(file_size)),
+                file_type="알 수 없음",
+                errors=[f"파일 검증 중 시스템 오류가 발생했습니다: {str(e)}"],
+                warnings=[]
+            )

@@ -20,11 +20,15 @@ from .program_router import router as program_router
 # API v1 라우터 생성
 api_v1 = APIRouter(prefix="/api/v1")
 
-# 사용자 관리 관련 라우터
-api_v1.include_router(user_router)
-
 # 인증 관련 라우터
 api_v1.include_router(auth_router)
+
+# 파일 관리 관련 라우터
+api_v1.include_router(file_router)
+api_v1.include_router(file_detail_router)
+
+# 사용자 관리 관련 라우터
+api_v1.include_router(user_router)
 
 # 프로그램 관리 관련 라우터
 api_v1.include_router(program_router)
@@ -53,9 +57,6 @@ api_v1.include_router(comment_router)
 api_v1.include_router(grp_code_router)
 api_v1.include_router(code_router)
 
-# 파일 관리 관련 라우터
-api_v1.include_router(file_router)
-api_v1.include_router(file_detail_router)
 
 # 로그 관리 관련 라우터
 api_v1.include_router(log_router)

@@ -301,7 +301,7 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
         ).filter(
             and_(
                 SysLog.occrrnc_de >= start_date,
-                SysLog.rqester_id.isnot(None)
+                SysLog.rqester_id.is_not(None)
             )
         ).group_by(
             SysLog.rqester_id, SysLog.rqester_nm
@@ -962,7 +962,7 @@ class SystemMonitoringService:
             and_(
                 SysLog.occrrnc_de >= today,
                 SysLog.occrrnc_de < tomorrow,
-                SysLog.rqester_id.isnot(None)
+                SysLog.rqester_id.is_not(None)
             )
         ).scalar() or 0
         
@@ -991,7 +991,7 @@ class SystemMonitoringService:
         ).filter(
             and_(
                 SysLog.occrrnc_de >= week_ago,
-                SysLog.trget_menu_nm.isnot(None)
+                SysLog.trget_menu_nm.is_not(None)
             )
         ).group_by(SysLog.trget_menu_nm).order_by(
             desc('count')
@@ -1004,7 +1004,7 @@ class SystemMonitoringService:
         
         # 최근 활동 목록
         recent_activities = db.query(SysLog).filter(
-            SysLog.rqester_id.isnot(None)
+            SysLog.rqester_id.is_not(None)
         ).order_by(desc(SysLog.occrrnc_de)).limit(10).all()
         
         recent_activities_list = [

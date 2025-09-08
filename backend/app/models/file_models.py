@@ -21,7 +21,7 @@ class File(Base):
     }
     
     # 기본 필드
-    atch_file_id = Column(String(20), primary_key=True, comment="첨부파일ID")
+    atch_file_id = Column(String(36), primary_key=True, comment="첨부파일ID")
     creat_dt = Column(DateTime, nullable=False, comment="생성일시")
     use = Column(String(1), nullable=False, default='Y', comment="사용여부")
     
@@ -53,7 +53,7 @@ class FileDetail(Base):
     )
     
     # 기본 필드 (복합 기본키)
-    atch_file_id = Column(String(20), ForeignKey('skybootcore.tb_file.atch_file_id'), 
+    atch_file_id = Column(String(36), ForeignKey('skybootcore.tb_file.atch_file_id'), 
                          primary_key=True, comment="첨부파일ID")
     file_sn = Column(Numeric(10), primary_key=True, comment="파일순번")
     file_stre_cours = Column(String(2000), nullable=False, comment="파일저장경로")
@@ -62,6 +62,7 @@ class FileDetail(Base):
     file_extsn = Column(String(20), nullable=False, comment="파일확장자")
     file_cn = Column(Text, nullable=True, comment="파일내용")
     file_size = Column(Numeric(8), nullable=True, comment="파일크기")
+    dwld_co = Column(Numeric(10), nullable=True, default=0, comment="다운로드수")
     file_delete_yn = Column(String(1), nullable=False, default='N', comment="파일삭제삭제여부")
     
     # 공통 필드

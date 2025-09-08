@@ -234,7 +234,14 @@ async def delete_bbs_master(
                 detail=f"게시판을 찾을 수 없습니다: {bbs_id}"
             )
         
-        bbs_master_service.soft_delete(db=db, db_obj=bbs_master)
+        # BbsMaster 모델은 bbs_id가 기본키이므로 직접 delete_at 필드를 'Y'로 변경
+        bbs_master.delete_at = 'Y'
+        bbs_master.last_updusr_id = current_user.get('user_id', 'system')
+        bbs_master.last_updt_pnttm = datetime.now()
+        
+        db.add(bbs_master)
+        db.commit()
+        db.refresh(bbs_master)
         
         return {"message": f"게시판이 삭제되었습니다: {bbs_id}"}
         
@@ -473,7 +480,14 @@ async def delete_post(
                 detail=f"게시글을 찾을 수 없습니다: {ntt_id}"
             )
         
-        bbs_service.soft_delete(db=db, db_obj=post)
+        # Bbs 모델은 복합 기본키를 사용하므로 직접 delete_at 필드를 'Y'로 변경
+        post.delete_at = 'Y'
+        post.last_updusr_id = current_user.get('user_id', 'system')
+        post.last_updt_pnttm = datetime.now()
+        
+        db.add(post)
+        db.commit()
+        db.refresh(post)
         
         return {"message": f"게시글이 삭제되었습니다: {ntt_id}"}
         
@@ -680,7 +694,14 @@ async def delete_comment(
                 detail=f"댓글을 찾을 수 없습니다: {comment_id}"
             )
         
-        comment_service.soft_delete(db=db, db_obj=comment)
+        # Comment 모델은 복합 기본키를 사용하므로 직접 use_at 필드를 'N'으로 변경
+        comment.use_at = 'N'
+        comment.last_updusr_id = current_user.get('user_id', 'system')
+        comment.last_updt_pnttm = datetime.now()
+        
+        db.add(comment)
+        db.commit()
+        db.refresh(comment)
         
         return {"message": f"댓글이 삭제되었습니다: {comment_id}"}
         
