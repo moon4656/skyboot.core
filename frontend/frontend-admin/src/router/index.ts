@@ -139,9 +139,9 @@ router.beforeEach(async (to, from, next) => {
   
   // 페이지 타이틀 설정
   if (to.meta.title) {
-    document.title = `${to.meta.title} - SkyBoot Admin`;
+    document.title = `${to.meta.title} - SkyBoot Admin 2`;
   } else {
-    document.title = 'SkyBoot Admin';
+    document.title = 'SkyBoot Admin 3';
   }
 
   // 인증이 필요한 페이지인지 확인

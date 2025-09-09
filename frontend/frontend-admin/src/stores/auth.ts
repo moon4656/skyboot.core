@@ -39,6 +39,8 @@ export const useAuthStore = defineStore('auth', () => {
 
       // 사용자 정보 조회
       await fetchUserProfile();
+      console.log('After fetchUserProfile - User:', user.value);
+      console.log('After fetchUserProfile - isAuthenticated:', isAuthenticated.value);
 
       return true;
     } catch (err: any) {
@@ -66,16 +68,28 @@ export const useAuthStore = defineStore('auth', () => {
 
   const fetchUserProfile = async (): Promise<void> => {
     try {
-      const userProfile = await authAPI.getProfile();
-      user.value = userProfile;
-    } catch (err: any) {
-      console.error('사용자 프로필 조회 실패:', err);
-      error.value = '사용자 정보를 불러올 수 없습니다.';
-      // 프로필 조회 실패 시 토큰만 정리하고 로그아웃 API 호출하지 않음
-      user.value = null;
-      accessToken.value = null;
-      refreshToken.value = null;
-      TokenManager.clearTokens();
+      const response = await authAPI.get('/api/v1/users/profile');
+      console.log('FetchUserProfile response:', response);
+      console.log('Response data:', response.data);
+      if (response.data) {
+        user.value = response.data;
+      }
+    } catch (error) {
+      if (error.response && error.response.status === 401) {
+        try {
+          await refreshTokens();
+          const retryResponse = await authAPI.get('/api/v1/users/profile');
+          if (retryResponse.data) {
+            user.value = retryResponse.data;
+          }
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          logout();
+        }
+      } else {
+        console.error('Failed to fetch user profile:', error);
+        logout();
+      }
     }
   };
 
@@ -110,11 +124,7 @@ export const useAuthStore = defineStore('auth', () => {
         await fetchUserProfile();
       } catch (err) {
         console.error('인증 초기화 실패:', err);
-        // 초기화 실패 시 토큰만 정리
-        user.value = null;
-        accessToken.value = null;
-        refreshToken.value = null;
-        TokenManager.clearTokens();
+        await logout();
       }
     }
   };

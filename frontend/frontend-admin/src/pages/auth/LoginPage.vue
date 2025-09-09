@@ -123,9 +123,10 @@ const handleLogin = async () => {
       color: 'success'
     })
 
-    // 로그인 성공 후 메인 대시보드로 이동
     const redirectPath = (route.query.redirect as string) || '/'
+    console.log('Attempting redirect to:', redirectPath)
     await router.push(redirectPath)
+    console.log('Redirect completed')
   } catch (error: any) {
     init({
       message: error.message || '로그인에 실패했습니다.',
