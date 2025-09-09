@@ -6,7 +6,7 @@ import time
 import logging
 from typing import Dict, List, Optional
 from fastapi import Request, Response, HTTPException
-from fastapi.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.middleware.base import RequestResponseEndpoint
 from collections import defaultdict, deque
 from datetime import datetime, timedelta

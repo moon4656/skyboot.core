@@ -235,7 +235,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
         }
         self.max_file_size = 100 * 1024 * 1024  # 100MB
     
-    def get_by_file_sn(self, db: Session, atch_file_id: int, file_sn: int ) -> Optional[FileDetail]:
+    def get_by_file_sn(self, db: Session, atch_file_id: str, file_sn: int ) -> Optional[FileDetail]:
         """
         파일 일련번호로 파일 상세 정보 조회
         
@@ -375,7 +375,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             logger.error(f"❌ 파일 업로드 실패 - 파일명: {original_filename}, 오류: {str(e)}")
             raise
     
-    def download_file(self, db: Session, file_sn: int) -> Optional[Dict[str, Any]]:
+    def download_file(self, db: Session, atch_file_id: str, file_sn: int) -> Optional[Dict[str, Any]]:
         """
         파일 다운로드 정보 조회
         
@@ -387,7 +387,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             파일 다운로드 정보 또는 None
         """
         try:
-            file_detail = self.get_by_file_sn(db, file_sn)
+            file_detail = self.get_by_file_sn(db, atch_file_id, file_sn)
             if not file_detail:
                 return None
             
@@ -413,7 +413,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             logger.error(f"❌ 파일 다운로드 정보 조회 실패 - file_sn: {file_sn}, 오류: {str(e)}")
             raise
     
-    def delete_file(self, db: Session, file_sn: int, user_id: str = 'system', delete_physical: bool = True) -> bool:
+    def delete_file(self, db: Session, atch_file_id: str, file_sn: int, user_id: str = 'system', delete_physical: bool = True) -> bool:
         """
         파일 삭제 (물리적 파일도 함께 삭제)
         
@@ -427,7 +427,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             삭제 성공 여부
         """
         try:
-            file_detail = self.get_by_file_sn(db, file_sn)
+            file_detail = self.get_by_file_sn(db, atch_file_id, file_sn)
             if not file_detail:
                 return False
             
@@ -455,7 +455,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
             logger.error(f"❌ 파일 삭제 실패 - file_sn: {file_sn}, 오류: {str(e)}")
             raise
     
-    def record_download(self, db: Session, file_sn: int) -> bool:
+    def record_download(self, db: Session, atch_file_id: str, file_sn: int) -> bool:
         """
         파일 다운로드 기록
         
@@ -469,6 +469,7 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
         try:
             file_detail = db.query(FileDetail).filter(
                 and_(
+                    FileDetail.atch_file_id == atch_file_id,
                     FileDetail.file_sn == file_sn,
                     FileDetail.file_delete_yn == 'N'
                 )
@@ -709,7 +710,8 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
                     file_type = type_name
                     break
             
-            return FileValidationResult(
+            # FileValidationResult 생성
+            validation_result = FileValidationResult(
                 is_valid=is_valid,
                 file_name=filename,
                 file_size=Decimal(str(file_size)),
@@ -718,13 +720,48 @@ class FileDetailService(BaseService[FileDetail, FileDetailCreate, FileDetailUpda
                 warnings=warnings
             )
             
+            # 검증 요약 생성
+            if is_valid:
+                summary = f"파일 '{filename}' 검증이 성공적으로 완료되었습니다."
+            else:
+                summary = f"파일 '{filename}' 검증에서 {len(errors)}개의 오류가 발견되었습니다."
+            
+            # 권장사항 생성
+            recommendations = []
+            if file_size > self.max_file_size * 0.8:  # 80% 이상일 때 경고
+                recommendations.append("파일 크기가 큽니다. 압축을 고려해보세요.")
+            if warnings:
+                recommendations.extend([f"경고: {warning}" for warning in warnings])
+            
+            return FileValidationResponse(
+                is_valid=is_valid,
+                file_name=filename,
+                file_size=Decimal(str(file_size)),
+                file_type=file_type,
+                validation_results=[validation_result],
+                summary=summary,
+                recommendations=recommendations
+            )
+            
         except Exception as e:
             logger.error(f"❌ 파일 검증 실패 - 파일명: {filename}, 오류: {str(e)}")
-            return FileValidationResult(
+            
+            # 오류 발생 시 FileValidationResult 생성
+            error_result = FileValidationResult(
                 is_valid=False,
                 file_name=filename,
                 file_size=Decimal(str(file_size)),
                 file_type="알 수 없음",
                 errors=[f"파일 검증 중 시스템 오류가 발생했습니다: {str(e)}"],
                 warnings=[]
+            )
+            
+            return FileValidationResponse(
+                is_valid=False,
+                file_name=filename,
+                file_size=Decimal(str(file_size)),
+                file_type="알 수 없음",
+                validation_results=[error_result],
+                summary=f"파일 '{filename}' 검증 중 시스템 오류가 발생했습니다.",
+                recommendations=["시스템 관리자에게 문의하세요."]
             )

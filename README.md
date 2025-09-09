@@ -186,54 +186,129 @@ CORS_ORIGINS=http://localhost:3000,http://localhost:5173
 
 ---
 
-## 🚀 설치 및 실행
+## 🚀 시작하기
 
-### 사전 요구사항
-- Python 3.11 이상
-- PostgreSQL 14 이상
-- Git
+### 필수 요구사항
+- Python 3.12+
+- PostgreSQL 12+
+- Node.js 18+ (프론트엔드 개발 시)
+- Docker & Docker Compose (프로덕션 배포 시)
 
-### 로컬 개발 환경 설정
+### 개발 환경 설정
 
+1. **저장소 클론**
 ```bash
-# 1. 프로젝트 클론
 git clone <repository-url>
-cd skyboot.core/backend  
+cd skyboot.core
+```
 
-# 2. 가상환경 생성 및 활성화
+2. **백엔드 설정**
+```bash
+cd backend
 python -m venv venv
-
-# Windows
-venv\Scripts\activate
-
-# macOS/Linux
-source venv/bin/activate
-
-# 3. 의존성 설치
-python.exe -m pip install --upgrade pip
-cd backend
+source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+```
 
-# 4. 환경 변수 설정
+3. **환경 변수 설정**
+```bash
 cp .env.example .env
-# .env 파일을 편집하여 데이터베이스 URL 및 기타 설정 입력
+# .env 파일을 편집하여 데이터베이스 및 기타 설정 구성
+```
 
-# 5. 데이터베이스 설정
-# PostgreSQL에서 데이터베이스 생성
-createdb skyboot_db
-
-# 데이터베이스 마이그레이션 실행
+4. **데이터베이스 마이그레이션**
+```bash
 alembic upgrade head
+```
 
-# 6. 서버 실행
-cd backend
+5. **서버 실행**
+```bash
 python main.py
 ```
 
-### 서버 접속
+6. **프론트엔드 Admin 설정 (선택사항)**
+```bash
+cd frontend/frontend-admin
+npm install
+npm run dev
+```
+
+개발 서버가 실행되면 다음 주소에서 접근할 수 있습니다:
+- API 서버: http://localhost:8000
+- API 문서: http://localhost:8000/docs
+- 대화형 API 문서: http://localhost:8000/redoc
+- Admin 패널: http://localhost:5173 (개발 모드)
+
+## 🐳 프로덕션 배포
+
+### Docker Compose를 이용한 배포
+
+1. **환경 변수 설정**
+```bash
+# 백엔드 환경 변수
+cp .env.example .env.production
+# .env.production 파일 편집
+
+# 프론트엔드 환경 변수
+cp frontend/frontend-admin/.env.example frontend/frontend-admin/.env.production
+# frontend/frontend-admin/.env.production 파일 편집
+```
+
+2. **배포 스크립트 실행**
+
+**Linux/macOS:**
+```bash
+chmod +x deploy.sh
+./deploy.sh
+```
+
+**Windows (PowerShell):**
+```powershell
+.\deploy.ps1
+```
+
+3. **수동 배포 (선택사항)**
+```bash
+# 프론트엔드 빌드
+cd frontend/frontend-admin
+npm install
+npm run build
+cd ../..
+
+# Docker 컨테이너 시작
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+### 배포 후 접속 정보
 - **API 서버**: http://localhost:8000
 - **API 문서**: http://localhost:8000/docs
-- **헬스 체크**: http://localhost:8000/health
+- **Admin 패널**: http://localhost/admin
+- **직접 Admin 접속**: http://localhost:3000
+
+### 기본 로그인 정보
+- **사용자명**: admin
+- **비밀번호**: admin123
+
+### 배포 관리 명령어
+```bash
+# 서비스 상태 확인
+docker-compose ps
+
+# 로그 확인
+docker-compose logs -f [service_name]
+
+# 서비스 재시작
+docker-compose restart [service_name]
+
+# 서비스 중지
+docker-compose down
+
+# 전체 정리 (데이터 포함)
+docker-compose down -v
+docker system prune -a
+```
 
 ---
 
@@ -635,6 +710,29 @@ pytest -v
 # 또는 토큰을 URL에 직접 포함
 - git remote set-url origin https://[토큰]@github.com/moon4656/skyboot.core.git
 ---
+
+# Frontend UI
+- Vue3
+- Vuestic UI
+- Vue Router
+- Axios
+- Element Plus
+- Vuex
+- Vue3 Chart.js
+- Vue3 PDF Viewer
+- Vue3 Draggable
+- Vue3 Dropzone
+- Vue3 File Upload
+- Vue3 Toast
+- Vue3 Clipboard
+- Vue3 Infinite Scroll
+
+# Frontend UI 설치
+- npm install
+
+# Frontend UI 실행
+- npm run dev
+
 
 **SkyBoot Core API** - 현대적이고 확장 가능한 FastAPI 백엔드 프레임워크  
 **버전**: 1.0.0 | **최종 업데이트**: 2024년 1월

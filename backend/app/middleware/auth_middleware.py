@@ -28,6 +28,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/refresh",
         "/api/v1/users/one-click-login",
         "/api/v1/files/upload-process",  # 테스트용 임시 추가
+        "/api/auth/login",  # 실제 로그인 엔드포인트
+        "/api/auth/refresh",  # 실제 토큰 갱신 엔드포인트
     }
     
     # 인증이 필요하지 않은 경로 패턴들
@@ -56,9 +58,18 @@ class AuthMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         method = request.method
         
+        # 디버깅을 위한 로그 추가
+        print(f"🔍 AuthMiddleware - Path: {path}, Method: {method}")
+        self.logger.info(f"🔍 AuthMiddleware - Path: {path}, Method: {method}")
+        
         # 인증이 필요하지 않은 경로 확인
         if self._is_excluded_path(path):
+            print(f"✅ AuthMiddleware - Excluded path: {path}")
+            self.logger.info(f"✅ AuthMiddleware - Excluded path: {path}")
             return await call_next(request)
+        
+        print(f"🔒 AuthMiddleware - Protected path: {path}")
+        self.logger.info(f"🔒 AuthMiddleware - Protected path: {path}")
         
         # OPTIONS 요청은 인증 제외 (CORS preflight)
         if method == "OPTIONS":

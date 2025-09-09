@@ -16,6 +16,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
     
     def __init__(self, app: ASGIApp):
         super().__init__(app)
+        print("🔧 LoggingMiddleware 초기화됨")  # 디버그용
         self.logger = get_api_logger()
     
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
@@ -44,6 +45,7 @@ class LoggingMiddleware(BaseHTTPMiddleware):
             user_id = getattr(request.state.user, 'id', None)
         
         # 요청 로깅
+        print(f"🔍 LoggingMiddleware: {method} {url} from {client_ip}")  # 디버그용
         self.logger.log_request(
             method=method,
             url=url,

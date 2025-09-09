@@ -192,6 +192,28 @@ class UserInfoService(BaseService[UserInfo, UserInfoCreate, UserInfoUpdate]):
         
         return users, total
     
+    def search_users_by_keyword(self, db: Session, keyword: str, skip: int = 0, limit: int = 100) -> tuple[List[UserInfo], int]:
+        """키워드로 사용자 검색 (OR 조건)"""
+        query = db.query(UserInfo)
+        
+        if keyword:
+            # OR 조건으로 여러 필드에서 검색
+            search_filter = or_(
+                UserInfo.user_id.ilike(f"%{keyword}%"),
+                UserInfo.user_nm.ilike(f"%{keyword}%"),
+                UserInfo.email_adres.ilike(f"%{keyword}%"),
+                UserInfo.empl_no.ilike(f"%{keyword}%")
+            )
+            query = query.filter(search_filter)
+        
+        # 전체 개수 조회
+        total = query.count()
+        
+        # 페이지네이션 적용
+        users = query.order_by(desc(UserInfo.frst_regist_pnttm)).offset(skip).limit(limit).all()
+        
+        return users, total
+    
     def get_user_statistics(self, db: Session) -> UserStatistics:
         """사용자 통계 조회"""
         # 전체 사용자 수

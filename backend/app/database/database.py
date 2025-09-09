@@ -21,7 +21,7 @@ logger = logging.getLogger(__name__)
 # 환경변수에서 데이터베이스 설정 읽기
 DATABASE_URL = os.getenv(
     "DATABASE_URL",
-    "postgresql://postgres:safe70%21%21@localhost:5432/skybootcore?client_encoding=utf8"
+    "postgresql://skyboot_user:skyboot_password@db:5432/skybootcore_prod"
 )
 
 # SQLAlchemy 엔진 생성

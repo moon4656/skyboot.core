@@ -340,12 +340,8 @@ async def search_users(
     """
     try:
         service = UserInfoService()
-        # 검색 키워드를 UserSearchParams 객체로 변환
-        search_params = UserSearchParams(
-            user_nm=query,
-            email_adres=query  # 사용자명과 이메일 모두에서 검색
-        )
-        users, total = service.search_users(db, search_params)
+        # 검색 키워드로 사용자 검색 (OR 조건)
+        users, total = service.search_users_by_keyword(db, query)
         return users
     except Exception as e:
         logger.error(f"❌ 사용자 검색 실패: {str(e)}")

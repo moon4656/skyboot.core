@@ -597,6 +597,7 @@ async def delete_file_detail(
         
         file_detail_service.delete_file(
             db=db,
+            atch_file_id=atch_file_id,
             file_sn=file_sn,
             delete_physical=delete_physical
         )
@@ -650,8 +651,7 @@ async def cleanup_orphaned_files(
     """
     try:
         cleaned_count = file_detail_service.cleanup_orphaned_files(
-            db=db,
-            upload_dir=UPLOAD_DIR
+            db=db
         )
         
         return {"message": f"{cleaned_count}개의 고아 파일이 정리되었습니다"}
