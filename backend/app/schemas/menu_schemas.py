@@ -13,37 +13,40 @@ from pydantic import BaseModel, Field
 class MenuInfoBase(BaseModel):
     """메뉴정보 기본 스키마"""
     menu_nm: Optional[str] = Field(None, max_length=60, description="메뉴명")
-    progrm_file_nm: Optional[str] = Field(None, max_length=100, description="프로그램파일명")
+    progrm_file_nm: Optional[str] = Field(None, max_length=60, description="프로그램파일명")
     menu_dc: Optional[str] = Field(None, max_length=250, description="메뉴설명")
     upper_menu_no: Optional[str] = Field(None, max_length=20, description="상위메뉴번호")
     menu_ordr: Optional[Decimal] = Field(None, description="메뉴순서")
-    menu_level: Optional[Decimal] = Field(None, description="메뉴레벨")
-    leaf_at: Optional[str] = Field(None, max_length=1, description="리프여부")
     relate_image_path: Optional[str] = Field(None, max_length=100, description="관련이미지경로")
-    relate_image_nm: Optional[str] = Field(None, max_length=50, description="관련이미지명")
-    use_at: str = Field(default="Y", max_length=1, description="사용여부")
-    delete_at: str = Field(default="N", max_length=1, description="삭제여부")
+    relate_image_nm: Optional[str] = Field(None, max_length=60, description="관련이미지명")
+    display_yn: Optional[str] = Field(None, max_length=1, description="메뉴표시여부")
+    use_tag_yn: Optional[str] = Field(None, max_length=1, description="태그사용여부")
+    menu_tag: Optional[str] = Field(None, description="메뉴태그")
 
 
 class MenuInfoCreate(MenuInfoBase):
     """메뉴정보 생성 스키마"""
     menu_no: str = Field(..., max_length=20, description="메뉴번호")
+    menu_nm: str = Field(..., max_length=60, description="메뉴명")
+    progrm_file_nm: str = Field(..., max_length=60, description="프로그램파일명")
+    menu_ordr: Decimal = Field(..., description="메뉴순서")
+    display_yn: str = Field(default="Y", max_length=1, description="메뉴표시여부")
+    use_tag_yn: str = Field(default="N", max_length=1, description="태그사용여부")
     frst_register_id: str = Field(..., max_length=20, description="최초등록자ID")
 
 
 class MenuInfoUpdate(BaseModel):
     """메뉴정보 수정 스키마"""
     menu_nm: Optional[str] = Field(None, max_length=60, description="메뉴명")
-    progrm_file_nm: Optional[str] = Field(None, max_length=100, description="프로그램파일명")
+    progrm_file_nm: Optional[str] = Field(None, max_length=60, description="프로그램파일명")
     menu_dc: Optional[str] = Field(None, max_length=250, description="메뉴설명")
     upper_menu_no: Optional[str] = Field(None, max_length=20, description="상위메뉴번호")
     menu_ordr: Optional[Decimal] = Field(None, description="메뉴순서")
-    menu_level: Optional[Decimal] = Field(None, description="메뉴레벨")
-    leaf_at: Optional[str] = Field(None, max_length=1, description="리프여부")
     relate_image_path: Optional[str] = Field(None, max_length=100, description="관련이미지경로")
-    relate_image_nm: Optional[str] = Field(None, max_length=50, description="관련이미지명")
-    use_at: Optional[str] = Field(None, max_length=1, description="사용여부")
-    delete_at: Optional[str] = Field(None, max_length=1, description="삭제여부")
+    relate_image_nm: Optional[str] = Field(None, max_length=60, description="관련이미지명")
+    display_yn: Optional[str] = Field(None, max_length=1, description="메뉴표시여부")
+    use_tag_yn: Optional[str] = Field(None, max_length=1, description="태그사용여부")
+    menu_tag: Optional[str] = Field(None, description="메뉴태그")
     last_updusr_id: Optional[str] = Field(None, max_length=20, description="최종수정자ID")
 
 
@@ -123,13 +126,7 @@ class MenuOrderUpdateRequest(BaseModel):
     menu_orders: List[dict] = Field(..., description="메뉴 순서 목록 [{menu_id: str, menu_ordr: Decimal}]")
 
 
-# 메뉴 복사 스키마
-class MenuCopyRequest(BaseModel):
-    """메뉴 복사 요청 스키마"""
-    source_menu_id: str = Field(..., description="복사할 메뉴ID")
-    target_upper_menu_id: Optional[str] = Field(None, description="복사될 상위메뉴ID")
-    new_menu_nm: Optional[str] = Field(None, description="새로운 메뉴명")
-    copy_children: bool = Field(default=False, description="하위 메뉴 포함 복사 여부")
+# 첫 번째 MenuCopyRequest 정의 제거됨 (중복 정의 방지)
 
 
 # 메뉴 통계 스키마

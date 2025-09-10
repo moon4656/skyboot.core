@@ -21,8 +21,8 @@
               <va-icon :name="stat.icon" size="2rem" />
             </div>
             <div class="stat-info">
-              <h3 class="stat-value">{{ stat.value }}</h3>
-              <p class="stat-title">{{ stat.title }}</p>
+              <h3 class="stat-value">{{ stat.value || 'No Title1'}}</h3> 
+              <p class="stat-title">{{ stat.title || 'No Title2' }}</p>
               <div class="stat-change" :class="stat.changeType">
                 <va-icon :name="stat.changeIcon" size="small" />
                 <span>{{ stat.change }}</span>
@@ -397,7 +397,7 @@ onMounted(() => {
 
 .content-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
   margin-bottom: 2rem;
 }

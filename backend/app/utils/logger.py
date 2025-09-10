@@ -159,6 +159,42 @@ class APILogger:
         
         log_method = getattr(self.logger, level.lower(), self.logger.info)
         log_method(message)
+    
+    def info(self, message: str):
+        """
+        INFO 레벨 로그 메시지
+        
+        Args:
+            message: 로그 메시지
+        """
+        self.logger.info(message)
+    
+    def error(self, message: str):
+        """
+        ERROR 레벨 로그 메시지
+        
+        Args:
+            message: 로그 메시지
+        """
+        self.logger.error(message)
+    
+    def warning(self, message: str):
+        """
+        WARNING 레벨 로그 메시지
+        
+        Args:
+            message: 로그 메시지
+        """
+        self.logger.warning(message)
+    
+    def debug(self, message: str):
+        """
+        DEBUG 레벨 로그 메시지
+        
+        Args:
+            message: 로그 메시지
+        """
+        self.logger.debug(message)
 
 
 # 전역 로거 인스턴스

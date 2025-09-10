@@ -68,19 +68,18 @@ export const useAuthStore = defineStore('auth', () => {
 
   const fetchUserProfile = async (): Promise<void> => {
     try {
-      const response = await authAPI.get('/api/v1/users/profile');
-      console.log('FetchUserProfile response:', response);
-      console.log('Response data:', response.data);
-      if (response.data) {
-        user.value = response.data;
+      const userData = await authAPI.getProfile();
+      console.log('FetchUserProfile response:', userData);
+      if (userData) {
+        user.value = userData;
       }
     } catch (error) {
       if (error.response && error.response.status === 401) {
         try {
           await refreshTokens();
-          const retryResponse = await authAPI.get('/api/v1/users/profile');
-          if (retryResponse.data) {
-            user.value = retryResponse.data;
+          const userData = await authAPI.getProfile();
+          if (userData) {
+            user.value = userData;
           }
         } catch (refreshError) {
           console.error('Token refresh failed:', refreshError);

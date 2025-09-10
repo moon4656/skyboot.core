@@ -124,9 +124,16 @@ class MenuInfoService(BaseService[MenuInfo, MenuInfoCreate, MenuInfoUpdate]):
                 for menu in menus:
                     children = build_menu_tree(menu.menu_no)
                     menu_dict = {
-                        'menu_id': menu.menu_no,  # menu_id를 menu_no와 동일하게 설정
+                        'id': int(menu.menu_no) if menu.menu_no.isdigit() else menu.menu_no,  # 프론트엔드가 기대하는 id 필드
+                        'name': menu.menu_nm,  # 프론트엔드가 기대하는 name 필드
+                        'menu_id': menu.menu_no,  # 기존 호환성을 위해 유지
                         'menu_no': menu.menu_no,
                         'menu_nm': menu.menu_nm,
+                        'path': getattr(menu, 'menu_url', None),  # 메뉴 URL이 있다면 path로 설정
+                        'icon': getattr(menu, 'menu_icon', None),  # 메뉴 아이콘이 있다면 설정
+                        'parent_id': int(menu.upper_menu_no) if menu.upper_menu_no and menu.upper_menu_no.isdigit() else menu.upper_menu_no,
+                        'order_num': menu.menu_ordr,
+                        'is_active': getattr(menu, 'use_at', 'Y') == 'Y',  # 사용 여부를 boolean으로 변환
                         'menu_level': Decimal('1') if menu.upper_menu_no is None else Decimal('2'),
                         'menu_ordr': menu.menu_ordr,
                         'leaf_at': 'Y' if not children else 'N',
@@ -497,6 +504,30 @@ class MenuInfoService(BaseService[MenuInfo, MenuInfoCreate, MenuInfoUpdate]):
             logger.error(f"❌ 메뉴 데이터 검증 실패: {str(e)}")
             raise
     
+    def _get_max_child_depth(self, db: Session, menu_id: str, current_depth: int = 0) -> int:
+        """
+        메뉴의 최대 하위 깊이를 계산합니다.
+        
+        Args:
+            db: 데이터베이스 세션
+            menu_id: 메뉴 ID
+            current_depth: 현재 깊이
+            
+        Returns:
+            최대 하위 깊이
+        """
+        children = db.query(MenuInfo).filter(MenuInfo.upper_menu_no == menu_id).all()
+        
+        if not children:
+            return current_depth
+        
+        max_depth = current_depth
+        for child in children:
+            child_depth = self._get_max_child_depth(db, child.menu_no, current_depth + 1)
+            max_depth = max(max_depth, child_depth)
+        
+        return max_depth
+    
     def copy_menu(
         self, 
         db: Session, 
@@ -505,7 +536,9 @@ class MenuInfoService(BaseService[MenuInfo, MenuInfoCreate, MenuInfoUpdate]):
         new_menu_nm: Optional[str] = None,
         new_parent_id: Optional[str] = None,
         copy_children: bool = False,
-        user_id: str = 'system'
+        user_id: str = 'system',
+        _depth: int = 0,
+        _copied_menus: Optional[set] = None
     ) -> MenuInfo:
         """
         메뉴 복사
@@ -518,11 +551,59 @@ class MenuInfoService(BaseService[MenuInfo, MenuInfoCreate, MenuInfoUpdate]):
             new_parent_id: 새로운 상위 메뉴 ID
             copy_children: 하위 메뉴 포함 복사 여부
             user_id: 생성자 ID
+            _depth: 재귀 깊이 (내부 사용)
+            _copied_menus: 복사된 메뉴 추적 (내부 사용)
             
         Returns:
             복사된 메뉴 객체
         """
         try:
+            # 실제 메뉴 트리 깊이 계산
+            if _depth == 0:  # 최초 호출 시에만 전체 깊이 체크
+                # 새로운 부모 메뉴의 깊이 계산
+                parent_depth = 0
+                if new_parent_id:
+                    current_parent = new_parent_id
+                    while current_parent:
+                        parent_menu = self.get_by_menu_id(db, current_parent)
+                        if parent_menu and parent_menu.upper_menu_no:
+                            parent_depth += 1
+                            current_parent = parent_menu.upper_menu_no
+                        else:
+                            break
+                
+                # 복사할 메뉴의 최대 하위 깊이 계산
+                max_child_depth = self._get_max_child_depth(db, source_menu_id)
+                total_depth = parent_depth + 1 + max_child_depth  # 부모깊이 + 현재메뉴 + 하위깊이
+                
+                logger.info(f"🔍 메뉴 복사 깊이 체크 - 부모깊이: {parent_depth}, 하위깊이: {max_child_depth}, 총깊이: {total_depth}")
+                
+                if total_depth > 10:
+                    logger.warning(f"⚠️ 메뉴 복사 깊이 제한 초과: {total_depth}")
+                    raise ValueError(f"메뉴 복사 깊이가 너무 깊습니다 (최대 10레벨, 예상: {total_depth}레벨)")
+            
+            # 재귀 호출 깊이 체크 (안전장치)
+            logger.info(f"🔍 메뉴 복사 재귀 깊이 체크 - 현재 깊이: {_depth}, 원본 메뉴: {source_menu_id}")
+            if _depth > 15:  # 재귀 호출 안전장치
+                logger.warning(f"⚠️ 메뉴 복사 재귀 깊이 제한 초과: {_depth}")
+                raise ValueError(f"메뉴 복사 재귀 깊이가 너무 깊습니다 (최대 15레벨, 현재: {_depth}레벨)")
+            
+            # 복사된 메뉴 추적 초기화
+            if _copied_menus is None:
+                _copied_menus = set()
+            
+            # 자기 자신을 복사하는 것 방지
+            if source_menu_id == new_parent_id:
+                logger.warning(f"⚠️ 자기 자신을 복사하려고 시도: {source_menu_id}")
+                raise ValueError(f"자기 자신을 복사할 수 없습니다: {source_menu_id}")
+            
+            # 순환 참조 방지
+            if source_menu_id in _copied_menus:
+                logger.warning(f"⚠️ 순환 참조 감지: {source_menu_id}")
+                raise ValueError(f"순환 참조가 감지되었습니다: {source_menu_id}")
+            
+            # 현재 메뉴를 복사된 목록에 추가
+            _copied_menus.add(source_menu_id)
             # 원본 메뉴 조회
             source_menu = self.get_by_menu_id(db, source_menu_id)
             if not source_menu:
@@ -573,8 +654,12 @@ class MenuInfoService(BaseService[MenuInfo, MenuInfoCreate, MenuInfoUpdate]):
                     MenuInfo.upper_menu_no == source_menu_id
                 ).all()
                 
-                for child in children:
-                    child_new_id = f"{new_menu_id}_{child.menu_no.split('_')[-1]}"
+                for i, child in enumerate(children):
+                    # 고유한 새 메뉴 ID 생성 (타임스탬프 포함)
+                    timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+                    child_new_id = f"{new_menu_id}_{i+1:03d}_{timestamp[-6:]}"
+                    
+                    # 재귀 호출 시 깊이와 추적 정보 전달
                     self.copy_menu(
                         db=db,
                         source_menu_id=child.menu_no,
@@ -582,7 +667,9 @@ class MenuInfoService(BaseService[MenuInfo, MenuInfoCreate, MenuInfoUpdate]):
                         new_menu_nm=child.menu_nm,
                         new_parent_id=new_menu_id,
                         copy_children=True,
-                        user_id=user_id
+                        user_id=user_id,
+                        _depth=_depth + 1,
+                        _copied_menus=_copied_menus.copy()  # 복사본 전달
                     )
             
             db.commit()

@@ -78,18 +78,38 @@ export const useThemeStore = defineStore('theme', () => {
     if (isDark.value) {
       root.classList.add('dark');
       root.setAttribute('data-theme', 'dark');
+      
+      // 다크 모드 Vuestic UI 색상 변수 설정
+      root.style.setProperty('--va-primary', '#4fc3f7');
+      root.style.setProperty('--va-secondary', '#90a4ae');
+      root.style.setProperty('--va-success', '#66bb6a');
+      root.style.setProperty('--va-info', '#42a5f5');
+      root.style.setProperty('--va-warning', '#ffb74d');
+      root.style.setProperty('--va-danger', '#ef5350');
+      root.style.setProperty('--va-background-primary', '#1a1a1a');
+      root.style.setProperty('--va-background-secondary', '#2d2d2d');
+      root.style.setProperty('--va-background-element', '#262626');
+      root.style.setProperty('--va-background-border', '#404040');
+      root.style.setProperty('--va-text-primary', '#ffffff');
+      root.style.setProperty('--va-text-inverted', '#262824');
     } else {
       root.classList.remove('dark');
       root.setAttribute('data-theme', 'light');
+      
+      // 라이트 모드 Vuestic UI 색상 변수 설정
+      root.style.setProperty('--va-primary', primaryColor.value);
+      root.style.setProperty('--va-secondary', '#424242');
+      root.style.setProperty('--va-success', '#4caf50');
+      root.style.setProperty('--va-info', '#2196f3');
+      root.style.setProperty('--va-warning', '#ff9800');
+      root.style.setProperty('--va-danger', '#f44336');
+      root.style.setProperty('--va-background-primary', '#ffffff');
+      root.style.setProperty('--va-background-secondary', '#f5f5f5');
+      root.style.setProperty('--va-background-element', '#ffffff');
+      root.style.setProperty('--va-background-border', '#dee5ed');
+      root.style.setProperty('--va-text-primary', '#262824');
+      root.style.setProperty('--va-text-inverted', '#ffffff');
     }
-
-    // CSS 커스텀 프로퍼티로 테마 설정
-    root.style.setProperty('--va-primary', primaryColor.value);
-    root.style.setProperty('--va-primary-darken', primaryColor.value);
-    root.style.setProperty('--va-primary-lighten', primaryColor.value);
-
-    // CSS 커스텀 프로퍼티 설정
-    root.style.setProperty('--va-primary', primaryColor.value);
   };
 
   // 테마 설정 저장

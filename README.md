@@ -210,13 +210,13 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-3. **환경 변수 설정**
+4. **환경 변수 설정**
 ```bash
 cp .env.example .env
 # .env 파일을 편집하여 데이터베이스 및 기타 설정 구성
 ```
 
-4. **데이터베이스 마이그레이션**
+5. **데이터베이스 마이그레이션**
 ```bash
 alembic upgrade head
 ```
@@ -232,6 +232,9 @@ cd frontend/frontend-admin
 npm install
 npm run dev
 ```
+
+포트 확인
+- netstat -ano | findstr :3000
 
 개발 서버가 실행되면 다음 주소에서 접근할 수 있습니다:
 - API 서버: http://localhost:8000

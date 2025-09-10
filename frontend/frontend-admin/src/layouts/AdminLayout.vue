@@ -13,7 +13,7 @@
           <!-- 사이드바 헤더 -->
           <div class="sidebar-header">
             <div class="logo-container">
-              <VaIcon name="admin_panel_settings" size="2rem" color="white" />
+              <VaIcon name="admin_panel_settings" size="2rem" color="#ffffff" />
               <span v-if="!sidebarMinimized" class="logo-text">Admin Panel</span>
             </div>
           </div>

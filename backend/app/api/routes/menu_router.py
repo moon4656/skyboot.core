@@ -81,7 +81,7 @@ async def get_menus(
 
 @menu_router.get("/tree", response_model=List[MenuTreeNode], summary="메뉴 트리 조회")
 async def get_menu_tree(
-    use_at: Optional[str] = Query(None, description="사용 여부 (Y/N)"),
+    use_at: Optional[str] = Query("Y", description="사용 여부 (Y/N)"),
     current_user: dict = Depends(get_current_user_from_bearer),
     db: Session = Depends(get_db)
 ):
@@ -104,7 +104,7 @@ async def get_menu_tree(
 
 @menu_router.get("/root", response_model=List[MenuInfoResponse], summary="루트 메뉴 조회")
 async def get_root_menus(
-    use_at: Optional[str] = Query(None, description="사용 여부 (Y/N)"),
+    use_at: Optional[str] = Query('Y', description="사용 여부 (Y/N)"),
     current_user: dict = Depends(get_current_user_from_bearer),
     db: Session = Depends(get_db)
 ):

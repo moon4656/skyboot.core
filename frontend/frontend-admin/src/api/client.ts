@@ -128,7 +128,7 @@ export const authAPI = {
 
   // 사용자 프로필 조회
   getProfile: async (): Promise<User> => {
-    const response = await apiClient.get<User>('/users/profile');
+    const response = await apiClient.get<User>('/api/v1/users/profile');
     return response.data;
   },
 
@@ -163,13 +163,13 @@ export const authAPI = {
 export const menuAPI = {
   // 메뉴 트리 조회
   getMenuTree: async () => {
-    const response = await apiClient.get('/menus/tree');
+    const response = await apiClient.get('/api/v1/menus/tree');
     return response;
   },
 
   // 메뉴 목록 조회
   getMenus: async () => {
-    const response = await apiClient.get('/menus');
+    const response = await apiClient.get('/api/v1/menus');
     return response;
   },
 };

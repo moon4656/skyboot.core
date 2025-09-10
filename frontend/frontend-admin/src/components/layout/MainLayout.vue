@@ -16,7 +16,7 @@
             <VaIcon
               name="admin_panel_settings"
               size="2rem"
-              color="white"
+              color="#ffffff"
             />
             <Transition name="fade">
               <span
@@ -90,7 +90,7 @@
     <!-- 메인 콘텐츠 -->
     <template #top>
       <!-- 상단 네비게이션 바 -->
-      <VaNavbar class="main-navbar" color="white">
+      <VaNavbar class="main-navbar" color="background-primary">
         <template #left>
           <!-- 모바일 메뉴 토글 -->
           <VaButton

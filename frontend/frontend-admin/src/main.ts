@@ -19,12 +19,38 @@ app.use(createVuestic({
   config: {
     colors: {
       variables: {
+        // 라이트 모드 색상
         primary: '#1976d2',
         secondary: '#424242',
         success: '#4caf50',
         info: '#2196f3',
         warning: '#ff9800',
         danger: '#f44336',
+        // 배경 색상
+        backgroundPrimary: '#ffffff',
+        backgroundSecondary: '#f5f5f5',
+        backgroundElement: '#ffffff',
+        backgroundBorder: '#dee5ed',
+        // 텍스트 색상
+        textPrimary: '#262824',
+        textInverted: '#ffffff',
+      },
+      // 다크 모드 색상 정의
+      dark: {
+        primary: '#4fc3f7',
+        secondary: '#90a4ae',
+        success: '#66bb6a',
+        info: '#42a5f5',
+        warning: '#ffb74d',
+        danger: '#ef5350',
+        // 다크 모드 배경 색상
+        backgroundPrimary: '#1a1a1a',
+        backgroundSecondary: '#2d2d2d',
+        backgroundElement: '#262626',
+        backgroundBorder: '#404040',
+        // 다크 모드 텍스트 색상
+        textPrimary: '#ffffff',
+        textInverted: '#262824',
       },
     },
     components: {

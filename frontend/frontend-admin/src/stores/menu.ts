@@ -44,6 +44,25 @@ export const useMenuStore = defineStore('menu', () => {
     };
   });
 
+  // 백엔드 응답을 프론트엔드 인터페이스로 변환하는 함수
+  const transformMenuData = (backendMenu: any): MenuItem => {
+    return {
+      id: parseInt(backendMenu.menu_id),
+      name: backendMenu.menu_nm,
+      path: backendMenu.progrm_file_nm || '',
+      icon: backendMenu.relate_image_nm || '',
+      parent_id: backendMenu.upper_menu_no ? parseInt(backendMenu.upper_menu_no) : undefined,
+      order_num: parseInt(backendMenu.menu_ordr || '0'),
+      is_active: backendMenu.display_yn !== 'N' && backendMenu.leaf_at !== 'N',
+      children: backendMenu.children ? backendMenu.children.map(transformMenuData) : [],
+      component: backendMenu.progrm_file_nm || '',
+      meta: {
+        requiresAuth: true,
+        title: backendMenu.menu_nm
+      }
+    };
+  };
+
   // Actions
   const fetchMenuTree = async (): Promise<void> => {
     try {
@@ -51,7 +70,17 @@ export const useMenuStore = defineStore('menu', () => {
       error.value = null;
 
       const response = await menuAPI.getMenuTree();
-      menuTree.value = response.data || [];
+      console.log('Raw menu response:', response);
+      
+      // 백엔드 응답을 프론트엔드 형식으로 변환
+      const transformedMenus = Array.isArray(response) 
+        ? response.map(transformMenuData)
+        : response.data 
+          ? (Array.isArray(response.data) ? response.data.map(transformMenuData) : [transformMenuData(response.data)])
+          : [transformMenuData(response)];
+      
+      menuTree.value = transformedMenus;
+      console.log('Transformed menu tree:', menuTree.value);
       
       // 플랫 메뉴 리스트 생성 (검색 및 권한 체크용)
       flatMenus.value = flattenMenuTree(menuTree.value);

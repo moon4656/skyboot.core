@@ -76,7 +76,7 @@ static_config = get_static_file_config()
 # 주의: FastAPI는 미들웨어를 역순으로 실행하므로 실제 실행 순서는 역순
 app.add_middleware(RequestSizeMiddleware, max_size=security_config.get("max_request_size", 50 * 1024 * 1024))
 app.add_middleware(APIUsageMiddleware)
-# app.add_middleware(AuthMiddleware)  # 임시 비활성화
+app.add_middleware(AuthMiddleware)
 app.add_middleware(LoggingMiddleware)
 
 # API 키 미들웨어 (선택적)
