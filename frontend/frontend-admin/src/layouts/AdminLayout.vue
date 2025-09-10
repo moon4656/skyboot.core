@@ -19,17 +19,48 @@
           </div>
 
           <!-- 메뉴 네비게이션 -->
-          <VaSidebarItem
-            v-for="item in menuItems"
-            :key="item.id"
-            :to="item.path"
-            :active="isMenuActive(item.path)"
-          >
-            <VaSidebarItemContent>
-              <VaIcon :name="item.icon" />
-              <VaSidebarItemTitle>{{ item.name }}</VaSidebarItemTitle>
-            </VaSidebarItemContent>
-          </VaSidebarItem>
+          <template v-for="item in menuItems" :key="item.id">
+            <VaSidebarItem
+              v-if="hasChildren(item)"
+              :active="isAnyChildActive(item)"
+              class="has-children"
+            >
+              <VaSidebarItemContent class="menu-parent" @click="toggleExpand(item.id)">
+                <VaIcon :name="item.icon" />
+                <VaSidebarItemTitle>{{ item.name }}</VaSidebarItemTitle>
+                <span class="spacer"></span>
+                <VaIcon :name="expanded[item.id] ? 'expand_less' : 'expand_more'" />
+              </VaSidebarItemContent>
+
+              <VaCollapse v-model="expanded[item.id]">
+                <div class="children">
+                  <VaSidebarItem
+                    v-for="child in item.children"
+                    :key="child.id"
+                    :to="child.path"
+                    :active="isMenuActive(child.path)"
+                    class="child-item"
+                  >
+                    <VaSidebarItemContent>
+                      <VaIcon :name="child.icon || 'chevron_right'" size="small" />
+                      <VaSidebarItemTitle>{{ child.name }}</VaSidebarItemTitle>
+                    </VaSidebarItemContent>
+                  </VaSidebarItem>
+                </div>
+              </VaCollapse>
+            </VaSidebarItem>
+
+            <VaSidebarItem
+              v-else
+              :to="item.path"
+              :active="isMenuActive(item.path)"
+            >
+              <VaSidebarItemContent>
+                <VaIcon :name="item.icon" />
+                <VaSidebarItemTitle>{{ item.name }}</VaSidebarItemTitle>
+              </VaSidebarItemContent>
+            </VaSidebarItem>
+          </template>
         </VaSidebar>
       </template>
 
@@ -125,7 +156,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '../stores/auth'
 import { useMenuStore } from '../stores/menu'
@@ -148,6 +179,26 @@ const sidebarMinimizedWidth = '64px'
 // 메뉴 아이템
 const menuItems = computed(() => menuStore.activeMenus)
 
+// 확장 상태 관리 및 유틸
+const expanded = ref<Record<number, boolean>>({})
+const hasChildren = (item: any) => Array.isArray(item.children) && item.children.length > 0
+const isMenuActive = (path: string | undefined) => path ? route.path.startsWith(path) : false
+const isAnyChildActive = (item: any) => item.children?.some((c: any) => isMenuActive(c.path)) || false
+const toggleExpand = (id: number) => { expanded.value[id] = !expanded.value[id] }
+
+watch(
+  () => route.path,
+  () => {
+    // 현재 경로에 해당하는 부모 메뉴 자동 확장
+    menuItems.value.forEach((item: any) => {
+      if (hasChildren(item)) {
+        expanded.value[item.id] = isAnyChildActive(item)
+      }
+    })
+  },
+  { immediate: true }
+)
+
 // 브레드크럼
 const breadcrumbs = computed(() => {
   const pathSegments = route.path.split('/').filter(Boolean)
@@ -168,14 +219,12 @@ const breadcrumbs = computed(() => {
   return crumbs
 })
 
-// 메뉴 활성 상태 확인
-const isMenuActive = (path: string) => {
-  return route.path.startsWith(path)
-}
+// 메뉴 활성 상태 확인 (상위에서 사용)
+// 이미 isMenuActive 정의를 확장하여 사용함
 
 // 경로로 메뉴 찾기
 const findMenuByPath = (path: string) => {
-  return menuItems.value.find(item => item.path === path)
+  return menuItems.value.find((item: any) => item.path === path)
 }
 
 // 사이드바 토글
@@ -285,4 +334,10 @@ onMounted(async () => {
     background-color: var(--va-background-primary);
   }
 }
+
+/* 추가: 중첩 메뉴 스타일 */
+.menu-parent { cursor: pointer; display: flex; align-items: center; }
+.spacer { flex: 1; }
+.children { padding-left: 1rem; }
+.child-item .va-sidebar-item__title { font-size: 0.9rem; }
 </style>

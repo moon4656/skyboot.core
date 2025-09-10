@@ -29,7 +29,10 @@ export const useMenuStore = defineStore('menu', () => {
 
   // Getters
   const activeMenus = computed(() => {
-    return menuTree.value.filter(menu => menu.is_active);
+    // 최상위 루트 메뉴만 표시하도록 parent_id가 없거나 0/빈 값인 항목만 필터링합니다.
+    return menuTree.value.filter(
+      (menu) => menu.is_active && (menu.parent_id === undefined || menu.parent_id === null || menu.parent_id === 0)
+    );
   });
 
   const getMenuById = computed(() => {
@@ -45,22 +48,42 @@ export const useMenuStore = defineStore('menu', () => {
   });
 
   // 백엔드 응답을 프론트엔드 인터페이스로 변환하는 함수
-  const transformMenuData = (backendMenu: any): MenuItem => {
-    return {
-      id: parseInt(backendMenu.menu_id),
-      name: backendMenu.menu_nm,
-      path: backendMenu.progrm_file_nm || '',
-      icon: backendMenu.relate_image_nm || '',
-      parent_id: backendMenu.upper_menu_no ? parseInt(backendMenu.upper_menu_no) : undefined,
-      order_num: parseInt(backendMenu.menu_ordr || '0'),
-      is_active: backendMenu.display_yn !== 'N' && backendMenu.leaf_at !== 'N',
-      children: backendMenu.children ? backendMenu.children.map(transformMenuData) : [],
-      component: backendMenu.progrm_file_nm || '',
+  // parentId 매개변수를 추가하여 재귀적으로 변환 시 상위 메뉴 ID를 전달합니다.
+  const transformMenuData = (backendMenu: any, parentId?: number): MenuItem => {
+    // 백엔드에서 내려오는 필드가 상황에 따라 다를 수 있으므로 최대한 유연하게 매핑합니다.
+    // 1) id / menu_id / menu_no 순으로 확인하여 숫자형 ID를 생성합니다.
+    const rawId = backendMenu.id ?? backendMenu.menu_id ?? backendMenu.menu_no;
+    const numericId = typeof rawId === 'number' ? rawId : parseInt(rawId || '0');
+
+    // 2) path는 path / progrm_file_nm 순으로 확인합니다.
+    const resolvedPath: string = backendMenu.path || backendMenu.progrm_file_nm || '';
+
+    // 3) icon은 icon / relate_image_nm 순으로 확인합니다.
+    const resolvedIcon: string = backendMenu.icon || backendMenu.relate_image_nm || '';
+
+    const menuItem: MenuItem = {
+      id: numericId,
+      name: backendMenu.menu_nm || backendMenu.name || '',
+      path: resolvedPath,
+      icon: resolvedIcon,
+      // 상위 메뉴 ID가 명시적으로 존재하면 해당 값을 사용하고, 그렇지 않은 경우 재귀 호출 시 전달된 parentId를 사용합니다.
+      parent_id: backendMenu.upper_menu_no
+        ? parseInt(backendMenu.upper_menu_no)
+        : parentId,
+      order_num: parseInt(backendMenu.menu_ordr || backendMenu.order_num || '0'),
+      // "is_active"는 메뉴의 표시 여부(display_yn)만으로 판단합니다. 루트 메뉴(leaf_at = 'N')도 표시되어야 하므로 leaf_at 값은 고려하지 않습니다.
+      is_active: backendMenu.display_yn !== 'N' && backendMenu.is_active !== false,
+      // 위에서 정의한 transformMenuData는 parentId를 인수로 받으므로 명시적으로 전달합니다.
+      children: Array.isArray(backendMenu.children)
+        ? backendMenu.children.map((child: any) => transformMenuData(child, numericId))
+        : [],
+      component: resolvedPath,
       meta: {
         requiresAuth: true,
-        title: backendMenu.menu_nm
+        title: backendMenu.menu_nm || backendMenu.name || ''
       }
     };
+    return menuItem;
   };
 
   // Actions

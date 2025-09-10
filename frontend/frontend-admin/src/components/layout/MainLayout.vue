@@ -33,7 +33,7 @@
         <VaSidebarItem
           v-for="menuItem in visibleMenus"
           :key="menuItem.id"
-          :to="menuItem.path"
+          :to="menuItem.children && menuItem.children.length > 0 ? undefined : menuItem.path"
           :active="isMenuActive(menuItem)"
         >
           <VaSidebarItemContent>
