@@ -22,7 +22,7 @@
           <template v-for="item in menuItems" :key="item.id">
             <VaSidebarItem
               v-if="hasChildren(item)"
-              :active="isAnyChildActive(item)"
+              :active="isDescendantActive(item) || isMenuActive(item.path)"
               class="has-children"
             >
               <VaSidebarItemContent class="menu-parent" @click="toggleExpand(item.id)">
@@ -34,18 +34,49 @@
 
               <VaCollapse v-model="expanded[item.id]">
                 <div class="children">
-                  <VaSidebarItem
-                    v-for="child in item.children"
-                    :key="child.id"
-                    :to="child.path"
-                    :active="isMenuActive(child.path)"
-                    class="child-item"
-                  >
-                    <VaSidebarItemContent>
-                      <VaIcon :name="child.icon || 'chevron_right'" size="small" />
-                      <VaSidebarItemTitle>{{ child.name }}</VaSidebarItemTitle>
-                    </VaSidebarItemContent>
-                  </VaSidebarItem>
+                  <template v-for="child in item.children" :key="child.id">
+                    <VaSidebarItem
+                      v-if="hasChildren(child)"
+                      :active="isDescendantActive(child) || isMenuActive(child.path)"
+                      class="child-parent"
+                    >
+                      <VaSidebarItemContent class="menu-child-parent" @click.stop="toggleExpand(child.id)">
+                        <VaIcon :name="child.icon || 'chevron_right'" size="small" />
+                        <VaSidebarItemTitle>{{ child.name }}</VaSidebarItemTitle>
+                        <span class="spacer"></span>
+                        <VaIcon :name="expanded[child.id] ? 'expand_less' : 'expand_more'" />
+                      </VaSidebarItemContent>
+
+                      <VaCollapse v-model="expanded[child.id]">
+                        <div class="grandchildren">
+                          <VaSidebarItem
+                            v-for="grand in child.children"
+                            :key="grand.id"
+                            :to="grand.path"
+                            :active="isMenuActive(grand.path)"
+                            class="grandchild-item"
+                          >
+                            <VaSidebarItemContent>
+                              <VaIcon :name="grand.icon || 'chevron_right'" size="small" />
+                              <VaSidebarItemTitle>{{ grand.name }}</VaSidebarItemTitle>
+                            </VaSidebarItemContent>
+                          </VaSidebarItem>
+                        </div>
+                      </VaCollapse>
+                    </VaSidebarItem>
+
+                    <VaSidebarItem
+                      v-else
+                      :to="child.path"
+                      :active="isMenuActive(child.path)"
+                      class="child-item"
+                    >
+                      <VaSidebarItemContent>
+                        <VaIcon :name="child.icon || 'chevron_right'" size="small" />
+                        <VaSidebarItemTitle>{{ child.name }}</VaSidebarItemTitle>
+                      </VaSidebarItemContent>
+                    </VaSidebarItem>
+                  </template>
                 </div>
               </VaCollapse>
             </VaSidebarItem>
@@ -183,18 +214,30 @@ const menuItems = computed(() => menuStore.activeMenus)
 const expanded = ref<Record<number, boolean>>({})
 const hasChildren = (item: any) => Array.isArray(item.children) && item.children.length > 0
 const isMenuActive = (path: string | undefined) => path ? route.path.startsWith(path) : false
-const isAnyChildActive = (item: any) => item.children?.some((c: any) => isMenuActive(c.path)) || false
-const toggleExpand = (id: number) => { expanded.value[id] = !expanded.value[id] }
+
+// 하위(손자 포함) 어느 항목이라도 현재 경로와 일치하면 true
+const isDescendantActive = (item: any): boolean => {
+  if (!hasChildren(item)) return false
+  return item.children.some((c: any) => isMenuActive(c.path) || isDescendantActive(c))
+}
+
+// 현재 경로 변경 시 부모/중간 메뉴들을 자동으로 펼침 상태로 동기화
+const updateExpandedByRoute = () => {
+  const traverse = (nodes: any[]) => {
+    nodes.forEach((n: any) => {
+      if (hasChildren(n)) {
+        expanded.value[n.id] = isDescendantActive(n)
+        traverse(n.children)
+      }
+    })
+  }
+  traverse(menuItems.value)
+}
 
 watch(
   () => route.path,
   () => {
-    // 현재 경로에 해당하는 부모 메뉴 자동 확장
-    menuItems.value.forEach((item: any) => {
-      if (hasChildren(item)) {
-        expanded.value[item.id] = isAnyChildActive(item)
-      }
-    })
+    updateExpandedByRoute()
   },
   { immediate: true }
 )
@@ -218,9 +261,6 @@ const breadcrumbs = computed(() => {
   
   return crumbs
 })
-
-// 메뉴 활성 상태 확인 (상위에서 사용)
-// 이미 isMenuActive 정의를 확장하여 사용함
 
 // 경로로 메뉴 찾기
 const findMenuByPath = (path: string) => {
@@ -265,6 +305,8 @@ const logout = async () => {
 onMounted(async () => {
   if (authStore.isAuthenticated) {
     await menuStore.fetchMenuTree()
+    // 최초 진입 시 현재 경로 기준으로 펼침 동기화
+    updateExpandedByRoute()
   }
 })
 </script>
@@ -337,7 +379,11 @@ onMounted(async () => {
 
 /* 추가: 중첩 메뉴 스타일 */
 .menu-parent { cursor: pointer; display: flex; align-items: center; }
+.menu-child-parent { cursor: pointer; display: flex; align-items: center; }
 .spacer { flex: 1; }
 .children { padding-left: 1rem; }
 .child-item .va-sidebar-item__title { font-size: 0.9rem; }
+.child-parent .va-sidebar-item__title { font-size: 0.95rem; }
+.grandchildren { padding-left: 1.5rem; }
+.grandchild-item .va-sidebar-item__title { font-size: 0.9rem; opacity: 0.95; }
 </style>
