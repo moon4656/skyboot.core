@@ -28,8 +28,8 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/refresh",
         "/api/v1/users/one-click-login",
         "/api/v1/files/upload-process",  # 테스트용 임시 추가
-        "/api/auth/login",  # 실제 로그인 엔드포인트
-        "/api/auth/refresh",  # 실제 토큰 갱신 엔드포인트
+        "/auth/login",  # 프론트엔드 직접 요청 경로
+        "/auth/refresh",  # 프론트엔드 직접 요청 경로
     }
     
     # 인증이 필요하지 않은 경로 패턴들
