@@ -312,49 +312,165 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* 기본 레이아웃 */
 .admin-layout {
   height: 100vh;
   overflow: hidden;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
 }
 
+/* 사이드바 헤더 개선 */
 .sidebar-header {
-  padding: 1.5rem 1rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 1.75rem 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  backdrop-filter: blur(10px);
 }
 
 .logo-container {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.875rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .logo-text {
-  font-size: 1.25rem;
-  font-weight: 600;
+  font-size: 1.375rem;
+  font-weight: 700;
   color: white;
+  letter-spacing: -0.025em;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* 메인 콘텐츠 */
 .main-content {
   height: 100vh;
   display: flex;
   flex-direction: column;
+  background: var(--va-background-secondary);
 }
 
+/* 네비게이션 바 개선 */
 .navbar {
   border-bottom: 1px solid var(--va-background-border);
-  padding: 0 1.5rem;
-  height: 64px;
+  padding: 0 1.75rem;
+  height: 68px;
   flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 .page-content {
   flex: 1;
   overflow: auto;
-  padding: 1.5rem;
+  padding: 2rem;
   background-color: var(--va-background-secondary);
 }
 
-/* 반응형 디자인 */
+/* 메뉴 아이템 레이아웃 개선 */
+.menu-parent {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  margin: 0.25rem 0.5rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+}
+
+.menu-parent:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(4px);
+}
+
+.menu-child-parent {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 0.625rem 1rem;
+  border-radius: 6px;
+  margin: 0.125rem 0.75rem;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 0.925rem;
+}
+
+.menu-child-parent:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(2px);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* 중첩 메뉴 간격 체계화 */
+.children {
+  padding-left: 0.75rem;
+  margin-top: 0.25rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.1);
+  margin-left: 1.5rem;
+}
+
+.grandchildren {
+  padding-left: 1rem;
+  margin-top: 0.25rem;
+  border-left: 2px solid rgba(255, 255, 255, 0.08);
+  margin-left: 1.25rem;
+}
+
+/* 타이포그래피 개선 */
+.child-item .va-sidebar-item__title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.4;
+}
+
+.child-parent .va-sidebar-item__title {
+  font-size: 0.925rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  line-height: 1.4;
+}
+
+.grandchild-item .va-sidebar-item__title {
+  font-size: 0.825rem;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.85);
+  line-height: 1.4;
+}
+
+/* 활성 상태 스타일 */
+.va-sidebar-item--active .menu-parent,
+.va-sidebar-item--active .menu-child-parent {
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  border-left: 3px solid rgba(255, 255, 255, 0.8);
+}
+
+.va-sidebar-item--active .va-sidebar-item__title {
+  color: white;
+  font-weight: 700;
+}
+
+/* 반응형 디자인 개선 */
+@media (max-width: 1024px) {
+  .page-content {
+    padding: 1.5rem;
+  }
+  
+  .navbar {
+    padding: 0 1.5rem;
+    height: 64px;
+  }
+  
+  .sidebar-header {
+    padding: 1.5rem 1rem;
+  }
+}
+
 @media (max-width: 768px) {
   .page-content {
     padding: 1rem;
@@ -362,28 +478,111 @@ onMounted(async () => {
   
   .navbar {
     padding: 0 1rem;
+    height: 60px;
+  }
+  
+  .sidebar-header {
+    padding: 1.25rem 0.875rem;
+  }
+  
+  .logo-text {
+    font-size: 1.25rem;
+  }
+  
+  .menu-parent {
+    padding: 0.625rem 0.875rem;
+    margin: 0.125rem 0.375rem;
+  }
+  
+  .menu-child-parent {
+    padding: 0.5rem 0.875rem;
+    margin: 0.125rem 0.5rem;
   }
 }
 
-/* 다크 모드 지원 */
+@media (max-width: 480px) {
+  .page-content {
+    padding: 0.75rem;
+  }
+  
+  .navbar {
+    padding: 0 0.75rem;
+  }
+  
+  .children {
+    padding-left: 0.5rem;
+    margin-left: 1rem;
+  }
+  
+  .grandchildren {
+    padding-left: 0.75rem;
+    margin-left: 0.875rem;
+  }
+}
+
+/* 다크 모드 지원 개선 */
 .va-dark {
   .navbar {
-    background-color: var(--va-background-primary);
-    border-bottom-color: var(--va-background-border);
+    background: rgba(26, 32, 44, 0.95);
+    border-bottom-color: rgba(255, 255, 255, 0.1);
   }
   
   .page-content {
     background-color: var(--va-background-primary);
   }
+  
+  .sidebar-header {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-bottom-color: rgba(255, 255, 255, 0.08);
+  }
+  
+  .menu-parent:hover {
+    background: rgba(255, 255, 255, 0.08);
+  }
+  
+  .menu-child-parent:hover {
+    background: rgba(255, 255, 255, 0.06);
+  }
 }
 
-/* 추가: 중첩 메뉴 스타일 */
-.menu-parent { cursor: pointer; display: flex; align-items: center; }
-.menu-child-parent { cursor: pointer; display: flex; align-items: center; }
-.spacer { flex: 1; }
-.children { padding-left: 1rem; }
-.child-item .va-sidebar-item__title { font-size: 0.9rem; }
-.child-parent .va-sidebar-item__title { font-size: 0.95rem; }
-.grandchildren { padding-left: 1.5rem; }
-.grandchild-item .va-sidebar-item__title { font-size: 0.9rem; opacity: 0.95; }
+/* 애니메이션 효과 */
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.va-sidebar-item {
+  animation: slideIn 0.3s ease-out;
+}
+
+/* 포커스 상태 개선 */
+.menu-parent:focus,
+.menu-child-parent:focus {
+  outline: 2px solid rgba(255, 255, 255, 0.5);
+  outline-offset: 2px;
+}
+
+/* 스크롤바 스타일링 */
+.va-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.va-sidebar::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.va-sidebar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 3px;
+}
+
+.va-sidebar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
 </style>

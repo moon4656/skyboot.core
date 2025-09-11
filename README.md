@@ -206,7 +206,11 @@ cd skyboot.core
 ```bash
 cd backend
 python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
+
+Windows: venv\Scripts\activate
+Windows: c:/Users/eldorado/skyboot.core/.venv/Scripts/Activate.ps1
+
+source venv/bin/activate  
 pip install -r requirements.txt
 ```
 
