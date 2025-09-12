@@ -102,6 +102,28 @@ async def get_menu_tree(
         )
 
 
+@menu_router.get("/tree/public", response_model=List[MenuTreeNode], summary="공개 메뉴 트리 조회")
+async def get_public_menu_tree(
+    use_at: Optional[str] = Query("Y", description="사용 여부 (Y/N)"),
+    db: Session = Depends(get_db)
+):
+    """
+    계층형 메뉴 트리를 조회합니다.
+    
+    - **use_at**: 사용 여부로 필터링
+    """
+    try:
+        menu_service = MenuInfoService()
+        menu_tree = menu_service.get_menu_tree(db=db, use_at=use_at)
+        return menu_tree
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"메뉴 트리 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
+
 @menu_router.get("/root", response_model=List[MenuInfoResponse], summary="루트 메뉴 조회")
 async def get_root_menus(
     use_at: Optional[str] = Query('Y', description="사용 여부 (Y/N)"),

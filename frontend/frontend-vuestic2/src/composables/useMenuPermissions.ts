@@ -1,6 +1,6 @@
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useAuthStore } from '@/stores/auth'
-import type { UserInfo } from '@/services/api'
+import { menuApi, type MenuTreeNode } from '@/services/api'
 
 /**
  * 메뉴 권한 관리를 위한 컴포저블
@@ -39,6 +39,11 @@ export interface Role {
 
 export function useMenuPermissions() {
   const authStore = useAuthStore()
+  
+  // 동적 메뉴 상태
+  const dynamicMenuItems = ref<MenuItem[]>([])
+  const isLoadingMenus = ref(false)
+  const menuLoadError = ref<string | null>(null)
   
   // 기본 메뉴 구조 정의
   const defaultMenuItems = ref<MenuItem[]>([
@@ -114,6 +119,59 @@ export function useMenuPermissions() {
       order: 8
     }
   ])
+  
+  // URL을 /admin 하위 경로로 정규화
+  const normalizeAdminPath = (url?: string, id?: number): string => {
+    if (!url || url.trim() === '') return `/admin/menu/${id ?? ''}`
+    // 앞의 슬래시 제거하여 정규화 준비
+    const cleaned = url.replace(/^\/+/, '')
+    // 이미 /admin 또는 admin/ 로 시작하는 경우, 중복 접두어 방지
+    if (cleaned === 'admin') return '/admin'
+    if (cleaned.startsWith('admin/')) return `/${cleaned}` // ex) 'admin/unauthorized' -> '/admin/unauthorized'
+    if (url.startsWith('/admin')) return url // ex) '/admin/unauthorized' 유지
+    // 절대경로(다른 루트)면 그대로 사용
+    if (url.startsWith('/')) return url
+    // 상대경로면 /admin 접두어 부여
+    return `/admin/${cleaned}`
+  }
+  
+  // API 메뉴를 내부 MenuItem 형식으로 변환 (MenuTreeNode 기준)
+  const convertApiMenuToMenuItem = (apiMenu: MenuTreeNode): MenuItem => {
+    return {
+      id: `menu_${apiMenu.id}`,
+      name: apiMenu.name,
+      path: normalizeAdminPath(apiMenu.url, apiMenu.id),
+      icon: apiMenu.icon || 'folder',
+      order: apiMenu.sort_order,
+      children: apiMenu.children?.map(convertApiMenuToMenuItem),
+      permissions: apiMenu.permission_code ? [apiMenu.permission_code] : [],
+      roles: [],
+      isVisible: apiMenu.use_at === 'Y'
+    }
+  }
+  
+  // 동적 메뉴 로드
+  const loadDynamicMenus = async () => {
+    isLoadingMenus.value = true
+    menuLoadError.value = null
+    
+    try {
+      console.log('🔄 동적 메뉴 로딩 시작...')
+      const apiMenus = await menuApi.getMenuTree('Y')
+      
+      // API 메뉴를 내부 형식으로 변환
+      dynamicMenuItems.value = apiMenus.map(convertApiMenuToMenuItem)
+      
+      console.log('✅ 동적 메뉴 로딩 완료:', dynamicMenuItems.value.length, '개 메뉴')
+    } catch (error) {
+      console.error('❌ 동적 메뉴 로딩 실패:', error)
+      menuLoadError.value = '메뉴를 불러오는데 실패했습니다.'
+      // 실패 시 기본 메뉴 사용
+      dynamicMenuItems.value = []
+    } finally {
+      isLoadingMenus.value = false
+    }
+  }
 
   /**
    * 사용자가 특정 권한을 가지고 있는지 확인
@@ -170,11 +228,14 @@ export function useMenuPermissions() {
   }
 
   /**
-   * 권한에 따라 필터링된 메뉴 목록 반환
+   * 권한에 따라 필터링된 메뉴 목록 반환 (동적 메뉴 + 기본 메뉴)
    */
   const filteredMenuItems = computed<MenuItem[]>(() => {
-    return defaultMenuItems.value
-      .filter(menuItem => canShowMenuItem(menuItem))
+    // 동적 메뉴와 기본 메뉴 병합
+    const allMenuItems = [...dynamicMenuItems.value, ...defaultMenuItems.value]
+    
+    return allMenuItems
+      .filter(menuItem => canShowMenuItem(menuItem) && menuItem.isVisible !== false)
       .map(menuItem => ({
         ...menuItem,
         isVisible: true,
@@ -187,7 +248,7 @@ export function useMenuPermissions() {
    * 특정 경로에 대한 접근 권한 확인
    */
   const canAccessPath = (path: string): boolean => {
-    const menuItem = defaultMenuItems.value.find(item => 
+    const menuItem = [...dynamicMenuItems.value, ...defaultMenuItems.value].find(item => 
       item.path === path || 
       item.children?.some(child => child.path === path)
     )
@@ -253,11 +314,19 @@ export function useMenuPermissions() {
     }
   })
 
+  // 컴포넌트 마운트 시 동적 메뉴 로드
+  onMounted(() => {
+    loadDynamicMenus()
+  })
+
   return {
     // 상태
     defaultMenuItems,
+    dynamicMenuItems,
     filteredMenuItems,
     userPermissions,
+    isLoadingMenus,
+    menuLoadError,
     
     // 메서드
     hasPermission,
@@ -269,7 +338,9 @@ export function useMenuPermissions() {
     setActiveMenuItem,
     addMenuItem,
     removeMenuItem,
-    updateMenuItem
+    updateMenuItem,
+    loadDynamicMenus,
+    convertApiMenuToMenuItem
   }
 }
 

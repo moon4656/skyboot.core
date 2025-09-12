@@ -366,6 +366,8 @@ onMounted(async () => {
   overflow: auto;
   padding: 2rem;
   background-color: var(--va-background-secondary);
+  height: calc(100vh - 68px); /* 네비게이션 바 높이 제외 */
+  max-height: calc(100vh - 68px);
 }
 
 /* 메뉴 아이템 레이아웃 개선 */
@@ -459,6 +461,8 @@ onMounted(async () => {
 @media (max-width: 1024px) {
   .page-content {
     padding: 1.5rem;
+    height: calc(100vh - 64px); /* 태블릿에서 네비게이션 바 높이 제외 */
+    max-height: calc(100vh - 64px);
   }
   
   .navbar {
@@ -474,6 +478,8 @@ onMounted(async () => {
 @media (max-width: 768px) {
   .page-content {
     padding: 1rem;
+    height: calc(100vh - 60px); /* 모바일에서 네비게이션 바 높이 제외 */
+    max-height: calc(100vh - 60px);
   }
   
   .navbar {
@@ -503,6 +509,8 @@ onMounted(async () => {
 @media (max-width: 480px) {
   .page-content {
     padding: 0.75rem;
+    height: calc(100vh - 60px); /* 작은 모바일에서도 네비게이션 바 높이 제외 */
+    max-height: calc(100vh - 60px);
   }
   
   .navbar {

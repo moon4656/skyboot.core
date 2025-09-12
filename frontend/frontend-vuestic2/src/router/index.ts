@@ -19,6 +19,7 @@ const UserPermissions = () => import('@/views/admin/UserPermissions.vue')
 const CommonCodes = () => import('@/views/admin/CommonCodes.vue')
 const BoardManagement = () => import('@/views/admin/BoardManagement.vue')
 const ComingSoon = () => import('@/views/ComingSoon.vue')
+const MenuTest = () => import('@/components/MenuTest.vue')
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -51,57 +52,62 @@ const routes: Array<RouteRecordRaw> = [
         component: Dashboard
       },
       {
-        path: 'admin',
-        children: [
-          {
-            path: 'users',
-            name: 'Users',
-            component: Users,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'menus',
-            name: 'Menus',
-            component: Menus,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'unauthorized',
-            name: 'Unauthorized',
-            component: Unauthorized,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'programs',
-            name: 'Programs',
-            component: Programs,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'menu-permissions',
-            name: 'MenuPermissions',
-            component: MenuPermissions,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'user-permissions',
-            name: 'UserPermissions',
-            component: UserPermissions,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'common-codes',
-            name: 'CommonCodes',
-            component: CommonCodes,
-            meta: { requiresAuth: true }
-          },
-          {
-            path: 'board-management',
-            name: 'BoardManagement',
-            component: BoardManagement,
-            meta: { requiresAuth: true }
-          }
-        ]
+        path: 'dashboard',
+        redirect: '/admin'
+      },
+      {
+        path: 'users',
+        name: 'Users',
+        component: Users,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'menus',
+        name: 'Menus',
+        component: Menus,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'unauthorized',
+        name: 'Unauthorized',
+        component: Unauthorized,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'programs',
+        name: 'Programs',
+        component: Programs,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'menu-permissions',
+        name: 'MenuPermissions',
+        component: MenuPermissions,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'user-permissions',
+        name: 'UserPermissions',
+        component: UserPermissions,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'common-codes',
+        name: 'CommonCodes',
+        component: CommonCodes,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'menu-test',
+        name: 'MenuTest',
+        component: MenuTest,
+        meta: { requiresAuth: true }
+      },
+      {
+        path: 'board-management',
+        name: 'BoardManagement',
+        component: BoardManagement,
+        meta: { requiresAuth: true }
       },
       {
         path: 'coming-soon',
@@ -126,12 +132,16 @@ router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
   const { canAccessPath } = useMenuPermissions()
   
-  // 로그인 페이지 접근 시 이미 로그인된 사용자는 대시보드로 리다이렉트
+  console.log(`🔍 [Router Guard] 라우팅: ${from.path} → ${to.path}`)
+  
+  // 로그인 페이지 접근 시 이미 로그인된 사용자는 메인화면으로 리다이렉트
   if (to.path === '/auth/login') {
     if (authStore.isAuthenticated) {
+      console.log('✅ [Router Guard] 이미 인증된 사용자 - 메인화면으로 리다이렉트')
       next('/admin')
       return
     }
+    console.log('🔓 [Router Guard] 로그인 페이지 접근 허용')
     next()
     return
   }
@@ -140,30 +150,35 @@ router.beforeEach(async (to, from, next) => {
   const requiresAuth = to.matched.some(record => record.meta.requiresAuth === true)
   
   if (requiresAuth) {
+    console.log('🔒 [Router Guard] 인증이 필요한 페이지 접근 시도')
+    
     // 1. Access Token 존재 여부 확인
     if (!authStore.accessToken) {
-      console.warn('⚠️ [Router Guard] Access Token이 없습니다.')
+      console.warn('⚠️ [Router Guard] Access Token이 없습니다 - 로그인 페이지로 이동')
       next({ name: 'Login', query: { redirect: to.fullPath } })
       return
     }
     
     // 2. 토큰 유효성 검사
     if (!authStore.isAuthenticated) {
-      console.warn('⚠️ [Router Guard] Access Token이 만료되었습니다. 토큰 갱신을 시도합니다.')
+      console.warn('⚠️ [Router Guard] Access Token이 만료되었습니다 - 토큰 갱신 시도')
       
       // 3. 토큰 갱신 시도
       const refreshed = await authStore.refreshAccessToken()
       if (!refreshed) {
-        console.warn('⚠️ [Router Guard] 토큰 갱신에 실패했습니다.')
+        console.warn('⚠️ [Router Guard] 토큰 갱신에 실패했습니다 - 로그인 페이지로 이동')
         next({ name: 'Login', query: { redirect: to.fullPath } })
         return
       }
+      console.log('✅ [Router Guard] 토큰 갱신 성공')
     }
     
     // 4. 사용자 정보 로드
     if (!authStore.user) {
       try {
+        console.log('📡 [Router Guard] 사용자 정보 로드 중...')
         await authStore.refreshUserInfo()
+        console.log('✅ [Router Guard] 사용자 정보 로드 완료')
       } catch (error) {
         console.error('❌ [Router Guard] 사용자 정보 로드 실패:', error)
         authStore.clearTokens()
@@ -177,14 +192,18 @@ router.beforeEach(async (to, from, next) => {
         to.path !== '/admin' && 
         to.name !== 'Dashboard' && 
         to.name !== 'Unauthorized') {
+      console.log(`🔐 [Router Guard] 권한 체크: ${to.path}`)
       if (!canAccessPath(to.path)) {
-        console.warn(`⚠️ [Router Guard] 권한 없음: ${to.path}`)
+        console.warn(`⚠️ [Router Guard] 권한 없음: ${to.path} - Unauthorized 페이지로 이동`)
         next({ name: 'Unauthorized' })
         return
       }
+      console.log('✅ [Router Guard] 권한 확인 완료')
     }
   }
   
+  // 6. 모든 검증 통과 - 페이지 접근 허용
+  console.log(`✅ [Router Guard] 페이지 접근 허용: ${to.path}`)
   next()
 })
 

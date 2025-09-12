@@ -28,6 +28,7 @@ class AuthMiddleware(BaseHTTPMiddleware):
         "/api/v1/auth/refresh",
         "/api/v1/users/one-click-login",
         "/api/v1/files/upload-process",  # 테스트용 임시 추가
+        "/api/v1/menus/tree/public",  # 공개 메뉴 트리 조회
         "/auth/login",  # 프론트엔드 직접 요청 경로
         "/auth/refresh",  # 프론트엔드 직접 요청 경로
     }

@@ -7,13 +7,14 @@ from typing import List, Optional, Dict, Any, Tuple
 from datetime import datetime, timedelta, date
 from decimal import Decimal
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, func, desc, asc, text
+from sqlalchemy import Numeric, and_, or_, func, desc, asc, text
 from sqlalchemy.exc import SQLAlchemyError
 from fastapi import HTTPException, status
 import psutil
 import time
 
 from app.models.system_models import SysLog, WebLog, ProgrmList
+from app.models.user_models import UserInfo
 from app.schemas.system_schemas import (
     SysLogCreate, SysLogUpdate,
     WebLogCreate, WebLogUpdate,
@@ -296,7 +297,6 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
         # 상위 사용자 목록
         top_users = db.query(
             SysLog.rqester_id,
-            SysLog.rqester_nm,
             func.count(SysLog.requst_id).label('request_count')
         ).filter(
             and_(
@@ -304,7 +304,7 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
                 SysLog.rqester_id.is_not(None)
             )
         ).group_by(
-            SysLog.rqester_id, SysLog.rqester_nm
+            SysLog.rqester_id
         ).order_by(
             desc('request_count')
         ).limit(10).all()
@@ -312,10 +312,10 @@ class SysLogService(BaseService[SysLog, SysLogCreate, SysLogUpdate]):
         top_users_list = [
             {
                 "user_id": user_id,
-                "user_name": user_name or "알 수 없음",
+                "user_name": "알 수 없음",
                 "request_count": count
             }
-            for user_id, user_name, count in top_users
+            for user_id, count in top_users
         ]
         
         # 오류율 계산
@@ -413,7 +413,6 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
         requst_id: str,
         rqester_id: Optional[str] = None,
         rqester_ip: Optional[str] = None,
-        rqester_nm: Optional[str] = None,
         trget_menu_nm: Optional[str] = None,
         process_se_code: Optional[str] = None,
         process_cn: Optional[str] = None,
@@ -424,7 +423,6 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
             requst_id=requst_id,
             rqester_id=rqester_id,
             rqester_ip=rqester_ip,
-            rqester_nm=rqester_nm,
             trget_menu_nm=trget_menu_nm,
             process_se_code=process_se_code,
             process_cn=process_cn,
@@ -450,8 +448,7 @@ class WebLogService(BaseService[WebLog, WebLogCreate, WebLogUpdate]):
         if search_params.rqester_ip:
             query = query.filter(WebLog.rqester_ip == search_params.rqester_ip)
         
-        if search_params.rqester_nm:
-            query = query.filter(WebLog.rqester_nm.ilike(f"%{search_params.rqester_nm}%"))
+        # rqester_nm 컬럼이 존재하지 않으므로 해당 필터링 제거
         
         if search_params.trget_menu_nm:
             query = query.filter(WebLog.trget_menu_nm.ilike(f"%{search_params.trget_menu_nm}%"))
@@ -902,7 +899,6 @@ class SystemMonitoringService:
         # 상위 사용자 목록
         top_users = db.query(
             SysLog.rqester_id,
-            SysLog.rqester_nm,
             func.count(SysLog.requst_id).label('request_count')
         ).filter(
             and_(
@@ -910,7 +906,7 @@ class SystemMonitoringService:
                 SysLog.rqester_id.isnot(None)
             )
         ).group_by(
-            SysLog.rqester_id, SysLog.rqester_nm
+            SysLog.rqester_id
         ).order_by(
             desc('request_count')
         ).limit(10).all()
@@ -918,10 +914,10 @@ class SystemMonitoringService:
         top_users_list = [
             {
                 "user_id": user_id,
-                "user_name": user_name or "알 수 없음",
+                "user_name": "알 수 없음",
                 "request_count": count
             }
-            for user_id, user_name, count in top_users
+            for user_id, count in top_users
         ]
         
         # 오류율 계산
@@ -962,7 +958,7 @@ class SystemMonitoringService:
             and_(
                 SysLog.occrrnc_de >= today,
                 SysLog.occrrnc_de < tomorrow,
-                SysLog.rqester_id.is_not(None)
+                SysLog.rqester_id.isnot(None)
             )
         ).scalar() or 0
         
@@ -991,7 +987,7 @@ class SystemMonitoringService:
         ).filter(
             and_(
                 SysLog.occrrnc_de >= week_ago,
-                SysLog.trget_menu_nm.is_not(None)
+                SysLog.trget_menu_nm.isnot(None)
             )
         ).group_by(SysLog.trget_menu_nm).order_by(
             desc('count')
@@ -1004,13 +1000,13 @@ class SystemMonitoringService:
         
         # 최근 활동 목록
         recent_activities = db.query(SysLog).filter(
-            SysLog.rqester_id.is_not(None)
+            SysLog.rqester_id.isnot(None)
         ).order_by(desc(SysLog.occrrnc_de)).limit(10).all()
         
         recent_activities_list = [
             {
                 "user_id": log.rqester_id,
-                "user_name": log.rqester_nm or "알 수 없음",
+                "user_name": "알 수 없음",
                 "menu_name": log.trget_menu_nm or "알 수 없음",
                 "action": log.process_se_code or "알 수 없음",
                 "timestamp": log.occrrnc_de.isoformat() if log.occrrnc_de else None

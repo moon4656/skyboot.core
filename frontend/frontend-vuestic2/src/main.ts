@@ -6,6 +6,7 @@ import App from './App.vue'
 import router from './router'
 import { createPinia } from 'pinia'
 import { skybootTheme } from './styles/theme'
+import { useAuthStore } from './stores/auth'
 
 const app = createApp(App)
 
@@ -14,6 +15,8 @@ app.use(createPinia())
 
 // Vue Router
 app.use(router)
+
+// Auth Store는 App.vue에서 초기화됩니다
 
 // Vuestic UI with Custom Theme
 app.use(createVuesticEssential({

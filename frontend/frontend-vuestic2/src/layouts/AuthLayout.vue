@@ -59,7 +59,7 @@
   max-width: 1200px;
   width: 100%;
   min-height: 600px;
-  background: white;
+  background: #ffffff;
   border-radius: 20px;
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
   overflow: hidden;
@@ -72,7 +72,7 @@
   align-items: center;
   justify-content: center;
   padding: 3rem;
-  color: white;
+  color: #ffffff;
 }
 
 .brand-content {
@@ -153,7 +153,7 @@
 }
 
 .auth-card {
-  background: white;
+  background: #ffffff;
   border-radius: 16px;
   padding: 2.5rem;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);

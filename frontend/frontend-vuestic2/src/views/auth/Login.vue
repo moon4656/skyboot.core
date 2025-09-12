@@ -60,7 +60,7 @@
           label="로그인 상태 유지"
           class="remember-checkbox"
         />
-        
+
         <va-button
           preset="plain"
           size="small"
@@ -129,24 +129,28 @@ const usernameRules = [
 
 const passwordRules = [
   (value: string) => !!value || '비밀번호를 입력해주세요',
-  (value: string) => value.length >= 6 || '비밀번호는 6자 이상이어야 합니다'
+  (value: string) => value.length >= 4 || '비밀번호는 4자 이상이어야 합니다'
 ]
 
 // 폼 유효성 검사
 const isFormValid = computed(() => {
-  return credentials.value.user_id.length >= 3 && 
-         credentials.value.password.length >= 6
+  return credentials.value.user_id.length >= 3 &&
+         credentials.value.password.length >= 4
 })
 
 // 메서드
 const handleLogin = async () => {
   if (!isFormValid.value) return
-  
+
   const success = await authStore.login(credentials.value)
-  
+
   if (success) {
-    // 로그인 성공 시 대시보드로 이동
-    router.push('/admin')
+    // 로그인 성공 시 리다이렉트 처리
+    const redirectPath = router.currentRoute.value.query.redirect as string
+    const targetPath = redirectPath || '/admin'
+    
+    console.log('✅ 로그인 성공 - 리다이렉트:', targetPath)
+    await router.push(targetPath)
   }
 }
 
@@ -168,8 +172,8 @@ const handleSignup = () => {
 onMounted(() => {
   // 개발 환경에서 기본값 설정 (실제 운영에서는 제거)
   if (import.meta.env.DEV) {
-    credentials.value.user_id = 'admin'
-    credentials.value.password = 'admin123'
+    credentials.value.user_id = 'user01'
+    credentials.value.password = 'test'
   }
 })
 </script>
@@ -313,11 +317,11 @@ onMounted(() => {
   .login-form {
     padding: 0 1rem;
   }
-  
+
   .login-title {
     font-size: 1.5rem;
   }
-  
+
   .login-options {
     flex-direction: column;
     gap: 1rem;

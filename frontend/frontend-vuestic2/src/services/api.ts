@@ -11,6 +11,10 @@ import router from '@/router'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api/v1'
 const API_TIMEOUT = 30000
 
+// 토큰 저장 키 (스토어와 일치시킴)
+const ACCESS_TOKEN_KEY = import.meta.env.VITE_TOKEN_STORAGE_KEY || 'skyboot_access_token'
+const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_STORAGE_KEY || 'skyboot_refresh_token'
+
 // Axios 인스턴스 생성
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -20,18 +24,34 @@ const apiClient: AxiosInstance = axios.create({
   },
 })
 
+// 공개 엔드포인트 목록 (토큰이 필요하지 않은 엔드포인트)
+const PUBLIC_ENDPOINTS = [
+  '/auth/login',
+  '/auth/refresh',
+  '/menus/tree/public',
+  '/health'
+]
+
 // 요청 인터셉터: JWT 토큰 자동 추가
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    // localStorage에서 직접 토큰 가져오기 (반응성 문제 방지)
-    const token = localStorage.getItem('access_token')
+    // 공개 엔드포인트인지 확인
+    const isPublicEndpoint = PUBLIC_ENDPOINTS.some(endpoint => 
+      config.url?.includes(endpoint)
+    )
     
-    if (token && config.headers) {
-      config.headers.Authorization = `Bearer ${token}`
+    // 공개 엔드포인트가 아닌 경우에만 토큰 추가
+    if (!isPublicEndpoint) {
+      // localStorage에서 직접 토큰 가져오기 (반응성 문제 방지)
+      const token = localStorage.getItem(ACCESS_TOKEN_KEY)
+      
+      if (token && config.headers) {
+        config.headers.Authorization = `Bearer ${token}`
+      }
     }
     
     // 요청 로깅
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`)
+    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url} ${isPublicEndpoint ? '(Public)' : '(Auth)'}`)
     
     return config
   },
@@ -56,8 +76,8 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true
       
       try {
-        // localStorage에서 리프레시 토큰 가져오기
-        const refreshToken = localStorage.getItem('refresh_token')
+        // localStorage에서 리프레시 토큰 가져오기 (스토어 키와 동일하게)
+        const refreshToken = localStorage.getItem(REFRESH_TOKEN_KEY)
         
         if (refreshToken) {
           // 리프레시 토큰으로 새 액세스 토큰 요청
@@ -66,7 +86,7 @@ apiClient.interceptors.response.use(
           })
           
           const newAccessToken = refreshResponse.data.access_token
-          localStorage.setItem('access_token', newAccessToken)
+          localStorage.setItem(ACCESS_TOKEN_KEY, newAccessToken)
           
           // 원래 요청에 새 토큰 추가하여 재시도
           if (originalRequest.headers) {
@@ -78,8 +98,10 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         // 리프레시 실패 시 로그아웃 처리
         console.error('❌ Token refresh failed:', refreshError)
-        localStorage.removeItem('access_token')
-        localStorage.removeItem('refresh_token')
+        localStorage.removeItem(ACCESS_TOKEN_KEY)
+        localStorage.removeItem(REFRESH_TOKEN_KEY)
+        // 사용자 정보 키가 다른 경우를 대비해 둘 다 정리
+        localStorage.removeItem('skyboot_user_info')
         localStorage.removeItem('user')
         window.location.href = '/auth/login'
         return Promise.reject(refreshError)
@@ -133,6 +155,32 @@ export interface UserInfo {
   emplyr_sttus_code?: string
 }
 
+// 메뉴 트리 노드 타입
+export interface MenuTreeNode {
+  id: number
+  name: string
+  url?: string
+  icon?: string
+  description?: string
+  sort_order: number
+  depth: number
+  parent_id?: number
+  use_at: string
+  permission_code?: string
+  created_at: string
+  updated_at?: string
+  children?: MenuTreeNode[]
+}
+
+// 메뉴 아이템 타입 (기존 호환성 유지)
+export interface MenuItem {
+  id: number
+  name: string
+  url?: string
+  icon?: string
+  children?: MenuItem[]
+}
+
 // 토큰 갱신 응답 타입
 export interface RefreshTokenResponse {
   access_token: string
@@ -146,7 +194,7 @@ export const authApi = {
    * 사용자 로그인
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await apiClient.post<LoginResponse>('/api/v1/auth/login', credentials)
+    const response = await apiClient.post<LoginResponse>('/auth/login', credentials)
     return response.data
   },
 
@@ -154,7 +202,7 @@ export const authApi = {
    * 액세스 토큰 갱신
    */
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    const response = await apiClient.post<RefreshTokenResponse>('/api/v1/auth/refresh', {
+    const response = await apiClient.post<RefreshTokenResponse>('/auth/refresh', {
       refresh_token: refreshToken
     })
     return response.data
@@ -164,14 +212,14 @@ export const authApi = {
    * 사용자 로그아웃
    */
   async logout(): Promise<void> {
-    await apiClient.post('/api/v1/auth/logout')
+    await apiClient.post('/auth/logout')
   },
 
   /**
    * 현재 사용자 정보 조회
    */
   async getCurrentUser(): Promise<UserInfo> {
-    const response = await apiClient.get<UserInfo>('/api/v1/auth/me')
+    const response = await apiClient.get<UserInfo>('/auth/me')
     return response.data
   },
 
@@ -179,7 +227,7 @@ export const authApi = {
    * 비밀번호 변경
    */
   async changePassword(oldPassword: string, newPassword: string): Promise<void> {
-    await apiClient.post('/api/v1/auth/change-password', {
+    await apiClient.post('/auth/change-password', {
       old_password: oldPassword,
       new_password: newPassword
     })
@@ -230,6 +278,21 @@ export const userApi = {
   }
 }
 
+// 메뉴 관련 타입 정의
+export interface MenuItem {
+  menu_no: number
+  menu_nm: string
+  progrm_file_nm?: string
+  upper_menu_no?: number
+  menu_level: number
+  sort_ordr: number
+  use_at: string
+  menu_dc?: string
+  relate_image_path?: string
+  relate_image_nm?: string
+  children?: MenuItem[]
+}
+
 // 메뉴 관리 API
 export const menuApi = {
   /**
@@ -238,6 +301,73 @@ export const menuApi = {
   async getMenus(): Promise<ApiResponse<any[]>> {
     const response = await apiClient.get<ApiResponse<any[]>>('/admin/menus')
     return response.data
+  },
+
+  /**
+   * 메뉴 트리 조회 (동적 메뉴용)
+   */
+  async getMenuTree(useAt: string = 'Y'): Promise<MenuTreeNode[]> {
+    try {
+      console.log('🔄 메뉴 트리 API 호출:', `/menus/tree/public?use_at=${useAt}`)
+      const response = await apiClient.get(`/menus/tree/public?use_at=${useAt}`)
+      
+      console.log('📡 메뉴 트리 응답:', response)
+      
+      // 응답 데이터 검증
+      if (!response.data) {
+        console.warn('⚠️ 응답 데이터가 없습니다')
+        return []
+      }
+      
+      // 백엔드에서 ApiResponse 형태로 반환하는 경우
+      if (response.data.success !== undefined) {
+        if (response.data.success && Array.isArray(response.data.data)) {
+          console.log('✅ 메뉴 트리 로딩 성공:', response.data.data.length, '개 메뉴')
+          return response.data.data
+        } else {
+          console.error('❌ API 응답 실패:', response.data.message)
+          throw new Error(response.data.message || '메뉴 트리 조회에 실패했습니다')
+        }
+      }
+      
+      // 직접 배열로 반환하는 경우
+      if (Array.isArray(response.data)) {
+        console.log('✅ 메뉴 트리 로딩 성공:', response.data.length, '개 메뉴')
+        return response.data
+      }
+      
+      console.warn('⚠️ 예상하지 못한 응답 형태:', typeof response.data)
+      return []
+      
+    } catch (error: any) {
+      console.error('❌ 메뉴 트리 API 호출 실패:', error)
+      
+      // 네트워크 오류
+      if (error.code === 'NETWORK_ERROR' || !error.response) {
+        throw new Error('네트워크 연결을 확인해주세요')
+      }
+      
+      // HTTP 오류
+      if (error.response) {
+        const status = error.response.status
+        const message = error.response.data?.message || error.message
+        
+        switch (status) {
+          case 401:
+            throw new Error('인증이 필요합니다')
+          case 403:
+            throw new Error('메뉴 조회 권한이 없습니다')
+          case 404:
+            throw new Error('메뉴 API를 찾을 수 없습니다')
+          case 500:
+            throw new Error('서버 오류가 발생했습니다')
+          default:
+            throw new Error(message || `HTTP ${status} 오류가 발생했습니다`)
+        }
+      }
+      
+      throw error
+    }
   },
 
   /**
@@ -298,7 +428,52 @@ export const fileApi = {
         'Content-Type': 'multipart/form-data'
       }
     })
-    
+    return response.data
+  }
+}
+
+// 대시보드 관련 타입 정의
+export interface DashboardStats {
+  total_users: number
+  active_sessions: number
+  today_visitors: number
+  system_status: string
+}
+
+export interface DashboardActivity {
+  id: number
+  text: string
+  time: string
+  icon: string
+  color: string
+}
+
+export interface DashboardSummary {
+  stats: DashboardStats
+  recent_activities: DashboardActivity[]
+  system_health: {
+    status: string
+    uptime: string
+    memory_usage: number
+    cpu_usage: number
+  }
+}
+
+// 대시보드 API
+export const dashboardApi = {
+  /**
+   * 대시보드 요약 정보 조회
+   */
+  async getDashboardSummary(): Promise<DashboardSummary> {
+    const response = await apiClient.get<DashboardSummary>('/system/dashboard')
+    return response.data
+  },
+
+  /**
+   * 시스템 상태 확인
+   */
+  async getSystemHealth(): Promise<any> {
+    const response = await apiClient.get('/system/health')
     return response.data
   }
 }

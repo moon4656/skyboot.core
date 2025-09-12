@@ -87,7 +87,7 @@
                   <va-icon :name="activity.icon" :color="activity.color" />
                 </div>
                 <div class="activity-content">
-                  <p class="activity-text">{{ activity.text }}</p>
+                  <p class="activity-text">{{ activity.user }} - {{ activity.action }}</p>
                   <span class="activity-time">{{ activity.time }}</span>
                 </div>
               </div>
@@ -127,6 +127,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
+import { dashboardApi, type DashboardSummary } from '@/services/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -137,84 +138,118 @@ const loading = ref(false)
 // 현재 사용자 정보
 const currentUser = computed(() => authStore.user)
 
-// 통계 데이터
-const stats = ref([
-  {
-    id: 1,
-    label: '총 사용자',
-    value: '1,234',
-    change: '+12%',
-    changeType: 'increase',
-    icon: 'people',
-    color: 'primary'
-  },
-  {
-    id: 2,
-    label: '활성 세션',
-    value: '89',
-    change: '+5%',
-    changeType: 'increase',
-    icon: 'computer',
-    color: 'success'
-  },
-  {
-    id: 3,
-    label: '오늘 방문자',
-    value: '567',
-    change: '-3%',
-    changeType: 'decrease',
-    icon: 'visibility',
-    color: 'info'
-  },
-  {
-    id: 4,
-    label: '시스템 상태',
-    value: '정상',
-    change: '100%',
-    changeType: 'increase',
-    icon: 'check_circle',
-    color: 'success'
-  }
-])
+// 대시보드 데이터
+const dashboardData = ref<DashboardSummary | null>(null)
 
-// 최근 활동 데이터
-const recentActivities = ref([
-  {
-    id: 1,
-    text: '새로운 사용자가 등록되었습니다',
-    time: '5분 전',
-    icon: 'person_add',
-    color: 'primary'
-  },
-  {
-    id: 2,
-    text: '시스템 백업이 완료되었습니다',
-    time: '1시간 전',
-    icon: 'backup',
-    color: 'success'
-  },
-  {
-    id: 3,
-    text: '새로운 게시글이 작성되었습니다',
-    time: '2시간 전',
-    icon: 'article',
-    color: 'info'
-  },
-  {
-    id: 4,
-    text: '사용자 권한이 업데이트되었습니다',
-    time: '3시간 전',
-    icon: 'security',
-    color: 'warning'
-  },
-  {
-    id: 5,
-    text: '시스템 점검이 예정되어 있습니다',
-    time: '1일 전',
-    icon: 'build',
-    color: 'secondary'
+// 통계 데이터 (computed로 변경)
+const stats = computed(() => {
+  if (!dashboardData.value) {
+    return [
+      {
+        id: 1,
+        label: '총 사용자',
+        value: '로딩중...',
+        change: '',
+        changeType: 'increase',
+        icon: 'people',
+        color: 'primary'
+      },
+      {
+        id: 2,
+        label: '활성 사용자',
+        value: '로딩중...',
+        change: '',
+        changeType: 'increase',
+        icon: 'computer',
+        color: 'success'
+      },
+      {
+        id: 3,
+        label: '오늘 요청수',
+        value: '로딩중...',
+        change: '',
+        changeType: 'increase',
+        icon: 'visibility',
+        color: 'info'
+      },
+      {
+        id: 4,
+        label: '오류 요청수',
+        value: '로딩중...',
+        change: '',
+        changeType: 'increase',
+        icon: 'error',
+        color: 'warning'
+      }
+    ]
   }
-])
+  
+  // 백엔드 응답 구조에 맞게 직접 접근
+  const data = dashboardData.value
+  return [
+    {
+      id: 1,
+      label: '총 사용자',
+      value: data?.total_users?.toLocaleString() || '0',
+      change: '+12%',
+      changeType: 'increase',
+      icon: 'people',
+      color: 'primary'
+    },
+    {
+      id: 2,
+      label: '활성 사용자',
+      value: data?.active_users_today?.toString() || '0',
+      change: '+5%',
+      changeType: 'increase',
+      icon: 'computer',
+      color: 'success'
+    },
+    {
+      id: 3,
+      label: '오늘 요청수',
+      value: data?.total_requests_today?.toLocaleString() || '0',
+      change: '+8%',
+      changeType: 'increase',
+      icon: 'visibility',
+      color: 'info'
+    },
+    {
+      id: 4,
+      label: '오류 요청수',
+      value: data?.error_requests_today?.toString() || '0',
+      change: data?.error_requests_today === 0 ? '0%' : '+' + ((data?.error_requests_today || 0) / (data?.total_requests_today || 1) * 100).toFixed(1) + '%',
+      changeType: (data?.error_requests_today || 0) === 0 ? 'increase' : 'decrease',
+      icon: 'error',
+      color: (data?.error_requests_today || 0) === 0 ? 'success' : 'warning'
+    }
+  ]
+})
+
+// 최근 활동 데이터 (computed로 변경)
+const recentActivities = computed(() => {
+  if (!dashboardData.value || !dashboardData.value.recent_activities) {
+    return [
+      {
+        id: 1,
+        user: '로딩중...',
+        action: '로딩중...',
+        time: '로딩중...',
+        icon: 'hourglass_empty',
+        color: 'info'
+      }
+    ]
+  }
+  
+  return dashboardData.value.recent_activities.map((activity, index) => ({
+    id: index + 1,
+    user: activity.user_name || '알 수 없음',
+    action: `${activity.menu_name} - ${activity.action}`,
+    time: activity.timestamp ? new Date(activity.timestamp).toLocaleString('ko-KR') : '알 수 없음',
+    icon: activity.icon || 'info',
+    color: activity.color || 'primary'
+  }))
+})
 
 // 빠른 액션 데이터
 const quickActions = ref([
@@ -248,18 +283,39 @@ const quickActions = ref([
   }
 ])
 
-// 메서드
-const refreshData = async () => {
+// 대시보드 데이터 로드
+const loadDashboardData = async () => {
   loading.value = true
   try {
-    // 실제 API 호출로 데이터 새로고침
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    console.log('데이터 새로고침 완료')
+    const response = await dashboardApi.getDashboardSummary()
+    dashboardData.value = response
+    console.log('대시보드 데이터 로드 완료:', response)
   } catch (error) {
-    console.error('데이터 새로고침 실패:', error)
+    console.error('대시보드 데이터 로드 실패:', error)
+    // 에러 발생 시 기본 데이터 설정
+    dashboardData.value = {
+      stats: {
+        total_users: 0,
+        active_sessions: 0,
+        today_visitors: 0,
+        system_status: '확인 중'
+      },
+      recent_activities: [],
+      system_health: {
+        status: '확인 중',
+        uptime: '0',
+        memory_usage: 0,
+        cpu_usage: 0
+      }
+    }
   } finally {
     loading.value = false
   }
+}
+
+// 메서드
+const refreshData = async () => {
+  await loadDashboardData()
 }
 
 const handleQuickAction = (action: any) => {
@@ -271,6 +327,7 @@ const handleQuickAction = (action: any) => {
 // 라이프사이클
 onMounted(() => {
   console.log('대시보드 로드됨')
+  loadDashboardData()
 })
 </script>
 
@@ -279,6 +336,8 @@ onMounted(() => {
   padding: 2rem;
   max-width: 1400px;
   margin: 0 auto;
+  min-height: 100%;
+  background: #f8f9fa;
 }
 
 .dashboard-header {
@@ -452,7 +511,7 @@ onMounted(() => {
 .activity-icon {
   padding: 0.5rem;
   border-radius: 50%;
-  background: white;
+  background: #ffffff;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 

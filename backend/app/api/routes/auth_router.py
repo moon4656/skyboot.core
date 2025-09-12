@@ -158,6 +158,73 @@ async def refresh_token(
             detail=f"토큰 갱신 처리 중 오류가 발생했습니다: {str(e)}"
         )
 
+
+@auth_router.get("/me", response_model=UserInfoResponse, summary="현재 사용자 정보 조회")
+async def get_current_user_info(
+    current_user: dict = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    현재 로그인한 사용자의 정보를 조회합니다.
+    
+    JWT 토큰을 통해 인증된 사용자의 상세 정보를 반환합니다.
+    """
+    try:
+        auth_service = AuthorInfoService()
+        user_info = auth_service.get_by_user_id(db, current_user["user_id"])
+        
+        if not user_info:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="사용자 정보를 찾을 수 없습니다."
+            )
+        
+        return UserInfoResponse(
+            user_id=user_info.user_id,
+            orgnzt_id=user_info.orgnzt_id,
+            user_nm=user_info.user_nm,
+            empl_no=user_info.empl_no,
+            ihidnum=user_info.ihidnum,
+            sexdstn_code=user_info.sexdstn_code,
+            brthdy=user_info.brthdy,
+            fxnum=user_info.fxnum,
+            house_adres=user_info.house_adres,
+            password_hint=user_info.password_hint,
+            password_cnsr=user_info.password_cnsr,
+            house_end_telno=user_info.house_end_telno,
+            area_no=user_info.area_no,
+            detail_adres=user_info.detail_adres,
+            zip=user_info.zip,
+            offm_telno=user_info.offm_telno,
+            mbtlnum=user_info.mbtlnum,
+            email_adres=user_info.email_adres,
+            ofcps_nm=user_info.ofcps_nm,
+            house_middle_telno=user_info.house_middle_telno,
+            group_id=user_info.group_id,
+            pstinst_code=user_info.pstinst_code,
+            emplyr_sttus_code=user_info.emplyr_sttus_code,
+            esntl_id=user_info.esntl_id,
+            crtfc_dn_value=user_info.crtfc_dn_value,
+            sbscrb_de=user_info.sbscrb_de,
+            lock_at=user_info.lock_at,
+            lock_cnt=user_info.lock_cnt,
+            lock_last_pnttm=user_info.lock_last_pnttm,
+            chg_pwd_last_pnttm=user_info.chg_pwd_last_pnttm,
+            frst_regist_pnttm=user_info.frst_regist_pnttm,
+            frst_register_id=user_info.frst_register_id,
+            last_updt_pnttm=user_info.last_updt_pnttm,
+            last_updusr_id=user_info.last_updusr_id
+        )
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"현재 사용자 정보 조회 중 오류 발생: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"사용자 정보 조회 중 오류가 발생했습니다: {str(e)}"
+        )
+
 # @auth_router.get("/users", response_model=UserInfoPagination, summary="사용자 목록 조회")
 # async def get_users(
 #     skip: int = Query(0, ge=0, description="건너뛸 레코드 수"),

@@ -5,8 +5,56 @@
 </template>
 
 <script setup lang="ts">
+import { onMounted } from 'vue'
+import { useRouter } from 'vue-router'
+import { useMenuStore } from '@/stores/menu'
+import { useAuthStore } from '@/stores/auth'
+
 // SkyBoot Admin 메인 애플리케이션
 // Vue 3 + Vite + TypeScript + Vuestic UI 기반
+
+const router = useRouter()
+const menuStore = useMenuStore()
+const authStore = useAuthStore()
+
+// 애플리케이션 초기화
+onMounted(async () => {
+  console.log('🚀 SkyBoot Admin 애플리케이션 초기화 시작')
+  
+  try {
+    // Auth Store 초기화 (토큰 검증 및 사용자 정보 로드)
+    await authStore.initialize()
+    
+    // 메뉴 데이터 초기화 (공개 메뉴)
+    await menuStore.initializeMenu()
+    
+    // 인증 상태에 따른 초기 라우팅
+    const currentPath = router.currentRoute.value.path
+    
+    if (authStore.isAuthenticated) {
+      // 인증된 사용자가 로그인 페이지에 있으면 메인화면으로 이동
+      if (currentPath === '/auth/login' || currentPath === '/') {
+        console.log('✅ 인증된 사용자 - 메인화면으로 이동')
+        await router.push('/admin')
+      }
+    } else {
+      // 인증되지 않은 사용자가 보호된 페이지에 있으면 로그인 페이지로 이동
+      if (currentPath !== '/auth/login' && !currentPath.startsWith('/auth/')) {
+        console.log('⚠️ 인증되지 않은 사용자 - 로그인 페이지로 이동')
+        await router.push('/auth/login')
+      }
+    }
+    
+    console.log('✅ 애플리케이션 초기화 완료')
+  } catch (error) {
+    console.error('❌ 애플리케이션 초기화 실패:', error)
+    
+    // 초기화 실패 시 로그인 페이지로 이동
+    if (router.currentRoute.value.path !== '/auth/login') {
+      await router.push('/auth/login')
+    }
+  }
+})
 </script>
 
 <style>
